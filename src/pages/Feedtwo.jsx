@@ -29,17 +29,26 @@ export default function GalleryView({ selectedCategory }) {
     let isMounted = true;
     setLoading(true);
     
+    // 📡 Fetches records from your active live Django web service container
     api.get('api/products/')
       .then(response => {
         if (isMounted) {
-          setProducts(Array.isArray(response.data) ? response.data : response.data.results || []);
+          // 🌟 THE SAFE STRUCTURAL FALLBACK: Natively parses both loose arrays and paginated results objects
+          const rawData = response.data;
+          if (Array.isArray(rawData)) {
+            setProducts(rawData);
+          } else if (rawData && Array.isArray(rawData.results)) {
+            setProducts(rawData.results);
+          } else {
+            setProducts([]);
+          }
           setLoading(false);
         }
       })
       .catch(err => {
         console.error("Storefront marketplace catalog grid sync failure:", err);
         if (isMounted) {
-          setError("Could not stream real-time wholesale listings from the cloud database cluster.");
+          setError("Could not parse the streamed real-time data payload from the backend container.");
           setLoading(false);
         }
       });
@@ -75,13 +84,10 @@ export default function GalleryView({ selectedCategory }) {
     return result;
   }, [products, selectedCategory, searchQuery, locationFilter, conditionFilter, maxPrice]);
 
-  // 🌟 DEFENSIVE TARGET: Grabs photos item at index 0 without nested structure drops
   const getOptimizedThumbnail = (photosArray) => {
     if (!photosArray || !Array.isArray(photosArray) || photosArray.length === 0) {
       return 'https://cloudinary.com';
     }
-    
-    // Explicitly target index slot 0 of the photo array
     const firstPhotoObject = photosArray[0];
     const rawUrl = firstPhotoObject?.image_url || firstPhotoObject?.image;
     
@@ -104,7 +110,7 @@ export default function GalleryView({ selectedCategory }) {
   return (
     <Box sx={{ flexGrow: 1, p: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
       
-      {/* 🎛️ INPUT CONTROL DECK */}
+      {/* 🎛️ REFINED INPUT CONTROL DECK */}
       <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: '16px', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: 2.5, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FilterAltIcon color="success" />
@@ -196,7 +202,7 @@ export default function GalleryView({ selectedCategory }) {
                   </Box>
                 </CardContent>
 
-                {/* 🌟 ACTION HUB MATRIX: Fixed typographic enclosures */}
+                {/* DUAL ACTION LINK MATRIX BUTTON SECTIONS */}
                 <Box sx={{ px: 2, pb: 2, pt: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Button 
                     variant="contained" color="success" size="small" fullWidth onClick={() => navigate(`/product/${item.id}`)} endIcon={<DoubleArrowIcon />} 
@@ -224,3 +230,7 @@ export default function GalleryView({ selectedCategory }) {
     </Box>
   );
 }
+
+
+
+  
