@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import Plotly from 'plotly.js-dist';
-import axios from 'axios';
 import api from '../api';
 
 
@@ -42,7 +41,7 @@ function PlotlyFromAPI() {
   return (
     <div
       ref={chartDivRef}
-      style={{ width: '100%', height: '500px' }}
+      style={{ width: '50%', height: '500px' }}
     />
   );
 }

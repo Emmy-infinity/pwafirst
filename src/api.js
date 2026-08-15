@@ -1,17 +1,18 @@
-import axios from 'axios';
-import { ACCESS_TOKEN } from './constants.js';
-
-const apiUrl = window?.configs?.apiUrl ? window.configs.apiUrl : "/choreo-apis/npgb/backend-rjz/test-rest-endpoint-5c6/v1.0";
+// Open your local configuration file ──> src/api.js
+import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000/"
+  // 🌟 CLOUD ENGINE GATEWAY: Locked directly to your live production backend server instance
+  baseURL: "https://django-ecommerce-backend-4u8q.onrender.com/",
+  
+  // 🌟 THE EXPLICIT TIMEOUT FIX: Extends the connection threshold window to 45 seconds.
+  // This completely stops Axios from dropping the network call while your Render free container wakes up!
+  timeout: 45000 
 });
-
-console.log(apiUrl)
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem(ACCESS_TOKEN);
+    const token = localStorage.getItem("ACCESS_TOKEN");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,5 +23,4 @@ api.interceptors.request.use(
   }
 );
 
-
-export default api
+export default api;

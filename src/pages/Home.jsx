@@ -2,18 +2,19 @@ import React, { useState, useEffect } from "react";
 import api from "../api";
 import Note from "../components/Note";
 
+
 import "../styles/NoteStyles.css"
 
 
 function Home() {
     const [notes, setNotes] = useState([]);
-    const[images,setImages]=useState([]);
+    
     const [content, setContent] = useState("");
     const [title, setTitle] = useState("");
    
     const getNotes = () => {
         api
-            .get("/api/process-image/")
+            .get("/api/notes/")
             .then((res) => res.data)
             .then((data) => setNotes(data))
             .catch((err) => {
@@ -23,15 +24,7 @@ function Home() {
 
 
 
- const getImage = () => {
-        api
-            .get("/api/process-image/")
-            .then((res) => res.data)
-            .then((data) => setNotes(data))
-            .catch((err) => {
-                alert(err);
-            });
-    };
+ 
 
 
 
@@ -61,11 +54,12 @@ function Home() {
 
     useEffect(() => {
         getNotes();
-       getImage();
+       
     }, []);
      
     return (
         <div>
+          
             <div>
                 <h2>Notes</h2>
                 
