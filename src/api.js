@@ -1,15 +1,15 @@
-// Open your local configuration file ──> src/api.js
+// src/api.js
 import axios from "axios";
 
 const api = axios.create({
-  // 🌟 CLOUD ENGINE GATEWAY: Locked directly to your live production backend server instance
   baseURL: "https://django-ecommerce-backend-4u8q.onrender.com",
-  
-  // 🌟 THE EXPLICIT TIMEOUT FIX: Extends the connection threshold window to 45 seconds.
-  // This completely stops Axios from dropping the network call while your Render free container wakes up!
-  timeout: 45000 
+  timeout: 45000,
+  headers: {
+    'Content-Type': 'application/json',
+  }
 });
 
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("ACCESS_TOKEN");
@@ -19,6 +19,25 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for better error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      console.error('API Error:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    } else {
+      console.error('Request error:', error.message);
+    }
     return Promise.reject(error);
   }
 );
