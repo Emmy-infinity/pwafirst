@@ -132,6 +132,7 @@ export default function ProductFormUploader() {
     setSelectedFiles(selectedFiles.filter((_, idx) => idx !== indexToRemove));
     setImagePreviews(imagePreviews.filter((_, idx) => idx !== indexToRemove));
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
@@ -291,7 +292,7 @@ export default function ProductFormUploader() {
                 <Grid container spacing={2}>
                   <Grid item xs={6}>
                     <TextField select label="Inventory Category" size="small" value={category} onChange={(e) => setCategory(e.target.value)} fullWidth InputProps={{ startAdornment: <InputAdornment position="start"><span style={{ fontSize: '16px' }}>{CATEGORY_ICONS[category]}</span></InputAdornment> }}>
-                      {categoryChoices.map((opt) => (<MenuItem key={option.value} value={opt.value}>{opt.label}</MenuItem>))}
+                      {categoryChoices.map((opt) => (<MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>))}
                     </TextField>
                   </Grid>
                   <Grid item xs={6}>
@@ -301,6 +302,35 @@ export default function ProductFormUploader() {
 
                 <Grid container spacing={2}>
                   <Grid item xs={6}>
-                    <TextField select label="Condition Quality" size="small" value={condition} onChange={(e) => setCondition(e.target.value)} fullWidth>
+                    <TextField select label="Condition Quality" size="small" value={condition} onChange={(e) => setCondition(e.target.value)} fullWidth />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField label="Stock Count" size="small" variant="outlined" type="number" fullWidth value={stockCount} onChange={(e) => setStockCount(Math.max(1, parseInt(e.target.value, 10) || 1))} disabled={uploading} InputProps={{ startAdornment: <InputAdornment position="start"><InventoryIcon color="action" /></InputAdornment> }} />
+                  </Grid>
+                </Grid>
 
-  
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <TextField select label="Primary Storage Hub" size="small" value={itemLocation} onChange={(e) => setItemLocation(e.target.value)} fullWidth InputProps={{ startAdornment: <InputAdornment position="start"><LocationOnIcon color="error" /></InputAdornment> }}>
+                      {locationChoices.map((opt) => (<MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>))}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField error={Boolean(errors.contactPhone)} helperText={errors.contactPhone} label="Contact Hotline" size="small" variant="outlined" fullWidth required value={contactPhone} onChange={(e) => { setContactPhone(e.target.value); if (errors.contactPhone) setErrors(prev => ({ ...prev, contactPhone: '' })); }} disabled={uploading} InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIcon color="action" /></InputAdornment> }} placeholder="e.g., 256770000000" />
+                  </Grid>
+                </Grid>
+
+                <TextField label="Seller Specific Location Details" variant="outlined" size="small" fullWidth value={sellerLocationDetails} onChange={(e) => setSellerLocationDetails(e.target.value)} disabled={uploading} InputProps={{ startAdornment: <InputAdornment position="start"><LocationOnIcon color="error" /></InputAdornment> }} placeholder="e.g., Shop 12, Gulu Main Market Upper Block" />
+
+                <Button type="submit" variant="contained" color="success" size="large" fullWidth disabled={uploading} sx={{ fontWeight: "bold", py: 1.8, mt: 1, fontSize: '16px', textTransform: 'none', borderRadius: '8px' }}>
+                  {uploading ? <CircularProgress size={24} color="inherit" /> : "🚀 Publish Listing Stock Live"}
+                </Button>
+              </Box>
+            </Grid>
+
+          </Grid>
+        </form>
+      </Paper>
+    </Box>
+  );
+}
