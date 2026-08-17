@@ -1,3 +1,5 @@
+
+//implemented tested sandbox
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -68,7 +70,7 @@ export default function MoMoCheckoutModal() {
         phone_number: formattedPhone
       };
 
-      const response = await api.post('api/payments/', paymentPayload);
+      const response = await api.post('api/test-payment/', paymentPayload);
       console.log("💰 Handshake Successful:", response.data);
       
       setSuccess(true);
@@ -126,7 +128,7 @@ export default function MoMoCheckoutModal() {
               <TextField
                 label="Mobile Money Registered Number" variant="outlined" fullWidth required type="tel"
                 value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} disabled={loading}
-                placeholder="e.g., 0770000000"
+                placeholder="e.g., 07789814925"
                 InputProps={{
                   startAdornment: <InputAdornment position="start"><PhoneAndroidIcon color="action" /></InputAdornment>
                 }}
