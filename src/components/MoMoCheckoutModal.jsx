@@ -17,7 +17,7 @@ export default function MoMoCheckoutModal() {
   
   // Extract contextual data payloads passed forward by Feedtwo grid nodes
   const targetProductId = location.state?.targetProductId || null;
-  const promoAmount = location.state?.promoAmount || 20000; // Default promotional rate 20k UGX
+  const promoAmount = location.state?.promoAmount || 5000; // Default promotional rate 20k UGX
   const itemTitle = location.state?.itemTitle || "Wholesale Hardware Component";
 
   const [phoneNumber, setPhoneNumber] = useState('');
