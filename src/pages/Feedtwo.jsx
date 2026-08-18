@@ -12,6 +12,7 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import DoubleArrowIcon from '@mui/icons-material/DoubleArrow';
 import StarIcon from '@mui/icons-material/Star';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
+import VerifiedIcon from '@mui/icons-material/Verified';
 import api from '../api';
 
 export default function GalleryView({ selectedCategory }) {
@@ -70,7 +71,6 @@ export default function GalleryView({ selectedCategory }) {
 
     const fetchConfig = async () => {
       try {
-        // Fetch all three in parallel
         const [feeRes, catRes, locRes] = await Promise.all([
           api.get('api/site-config/'),
           api.get('api/categories/'),
@@ -79,14 +79,13 @@ export default function GalleryView({ selectedCategory }) {
 
         if (isMounted) {
           setPromoFee(feeRes.data.promotion_fee || 20000);
-          setCategories(catRes.data);
-          setLocations(locRes.data);
+          setCategories(catRes.data || []);
+          setLocations(locRes.data || []);
           setConfigLoading(false);
         }
       } catch (err) {
         console.error("Failed to fetch configuration data:", err);
         if (isMounted) {
-          // Use fallbacks
           setPromoFee(20000);
           setCategories([]);
           setLocations([]);
@@ -104,7 +103,7 @@ export default function GalleryView({ selectedCategory }) {
   const filteredProducts = useMemo(() => {
     let result = products;
 
-    // External category filter (from navigation)
+    // External category filter (from sidebar)
     if (selectedCategory && selectedCategory !== 'ALL') {
       result = result.filter(p => String(p.category_slug || '').toUpperCase() === String(selectedCategory).toUpperCase());
     }
@@ -118,12 +117,12 @@ export default function GalleryView({ selectedCategory }) {
       );
     }
 
-    // Dynamic category filter
+    // Category filter (dropdown)
     if (categoryFilter !== 'ALL') {
       result = result.filter(p => p.category_slug === categoryFilter);
     }
 
-    // Dynamic location filter
+    // Location filter
     if (locationFilter !== 'ALL') {
       result = result.filter(p => p.location_code === locationFilter);
     }
@@ -232,84 +231,135 @@ export default function GalleryView({ selectedCategory }) {
         </Paper>
       ) : (
         <Grid container spacing={3}>
-          {filteredProducts.map((item) => (
-            <Grid item xs={12} sm={6} lg={4} key={item.id}>
-              <Card 
-                elevation={0} 
-                sx={{ 
-                  borderRadius: '16px', border: '1px solid #eaeaea', display: 'flex', flexDirection: 'column', height: '100%', 
-                  backgroundColor: '#ffffff', overflow: 'hidden', transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 12px 30px rgba(0,0,0,0.08)' }
-                }}
-              >
-                <Box sx={{ position: 'relative', pt: '75%', bgcolor: '#f7f7f7', overflow: 'hidden', cursor: 'pointer' }} onClick={() => navigate(`/product/${item.id}`)}>
-                  <CardMedia component="img" image={getOptimizedThumbnail(item.photos)} alt={item.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <Chip label={item.condition_display || item.condition} color={item.condition === 'NEW' ? 'success' : 'warning'} size="small" sx={{ position: 'absolute', top: 12, left: 12, fontWeight: '800', fontSize: '11px', borderRadius: '6px' }} />
-                  
-                  {item.is_featured && (
-                    <Chip icon={<StarIcon style={{ color: '#fff', fontSize: '13px' }} />} label="FEATURED" color="error" size="small" sx={{ position: 'absolute', top: 12, right: 12, fontWeight: '900', fontSize: '10px', px: 0.5, borderRadius: '6px' }} />
-                  )}
-                </Box>
-
-                <CardContent sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: '800', color: '#111', lineHeight: 1.4, height: '2.6em', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                    {item.title}
-                  </Typography>
-
-                  <Typography variant="h6" sx={{ fontWeight: '900', color: '#2e7d32', mt: 0.5 }}>
-                    UGX {Number(item.price).toLocaleString()}
-                  </Typography>
-
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, mt: 'auto', pt: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
-                      <LocationOnIcon sx={{ fontSize: '16px', color: '#d32f2f' }} />
-                      <Typography variant="caption" sx={{ fontWeight: '600' }}>
-                        {item.location_name || item.location_code || 'No location'}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
-                      <InventoryIcon sx={{ fontSize: '16px' }} />
-                      <Typography variant="caption" sx={{ fontWeight: '600' }}>
-                        Stock: <strong>{item.stock_count} units</strong>
-                      </Typography>
-                    </Box>
-                    {item.category_name && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
-                        <Typography variant="caption" sx={{ fontWeight: '600' }}>
-                          Category: <strong>{item.category_name}</strong>
-                        </Typography>
-                      </Box>
+          {filteredProducts.map((item) => {
+            const isFeatured = item.is_featured === true;
+            return (
+              <Grid item xs={12} sm={6} lg={4} key={item.id}>
+                <Card 
+                  elevation={0} 
+                  sx={{ 
+                    borderRadius: '16px', border: '1px solid #eaeaea', display: 'flex', flexDirection: 'column', height: '100%', 
+                    backgroundColor: '#ffffff', overflow: 'hidden', transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 12px 30px rgba(0,0,0,0.08)' }
+                  }}
+                >
+                  <Box sx={{ position: 'relative', pt: '75%', bgcolor: '#f7f7f7', overflow: 'hidden', cursor: 'pointer' }} onClick={() => navigate(`/product/${item.id}`)}>
+                    <CardMedia component="img" image={getOptimizedThumbnail(item.photos)} alt={item.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <Chip label={item.condition_display || item.condition} color={item.condition === 'NEW' ? 'success' : 'warning'} size="small" sx={{ position: 'absolute', top: 12, left: 12, fontWeight: '800', fontSize: '11px', borderRadius: '6px' }} />
+                    
+                    {isFeatured && (
+                      <Chip 
+                        icon={<VerifiedIcon style={{ color: '#fff', fontSize: '13px' }} />} 
+                        label="FEATURED" 
+                        color="success" 
+                        size="small" 
+                        sx={{ position: 'absolute', top: 12, right: 12, fontWeight: '900', fontSize: '10px', px: 0.5, borderRadius: '6px' }} 
+                      />
                     )}
                   </Box>
-                </CardContent>
 
-                <Box sx={{ px: 2, pb: 2, pt: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <Button 
-                    variant="contained" color="success" size="small" fullWidth onClick={() => navigate(`/product/${item.id}`)} endIcon={<DoubleArrowIcon />} 
-                    sx={{ fontWeight: 'bold', borderRadius: '8px', textTransform: 'none', py: 1 }}
-                  >
-                    View Specifications Sheet
-                  </Button>
+                  <CardContent sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: '800', color: '#111', lineHeight: 1.4, height: '2.6em', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      {item.title}
+                    </Typography>
 
-                  <Button 
-                    variant="outlined" color="error" size="small" fullWidth startIcon={<FlashOnIcon />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('/payment', { 
-                        state: { 
-                          targetProductId: item.id, 
-                          promoAmount: promoFee,   // ✅ Dynamic fee from backend
-                          itemTitle: item.title 
-                        } 
-                      });
-                    }}
-                    sx={{ fontWeight: '800', borderRadius: '8px', textTransform: 'none', py: 0.8, borderWidth: '1.5px', '&:hover': { borderWidth: '1.5px', bgcolor: 'rgba(211,47,47,0.03)' } }}
-                  >
-                    Boost Listing via Mobile Money
-                  </Button>
-                </Box>
-              </Card>
-            </Grid>
-          ))}
+                    <Typography variant="h6" sx={{ fontWeight: '900', color: '#2e7d32', mt: 0.5 }}>
+                      UGX {Number(item.price).toLocaleString()}
+                    </Typography>
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, mt: 'auto', pt: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
+                        <LocationOnIcon sx={{ fontSize: '16px', color: '#d32f2f' }} />
+                        <Typography variant="caption" sx={{ fontWeight: '600' }}>
+                          {item.location_name || item.location_code || 'No location'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
+                        <InventoryIcon sx={{ fontSize: '16px' }} />
+                        <Typography variant="caption" sx={{ fontWeight: '600' }}>
+                          Stock: <strong>{item.stock_count} units</strong>
+                        </Typography>
+                      </Box>
+                      {item.category_name && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
+                          <Typography variant="caption" sx={{ fontWeight: '600' }}>
+                            Category: <strong>{item.category_name}</strong>
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </CardContent>
+
+                  <Box sx={{ px: 2, pb: 2, pt: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Button 
+                      variant="contained" color="success" size="small" fullWidth onClick={() => navigate(`/product/${item.id}`)} endIcon={<DoubleArrowIcon />} 
+                      sx={{ fontWeight: 'bold', borderRadius: '8px', textTransform: 'none', py: 1 }}
+                    >
+                      View Specifications Sheet
+                    </Button>
+
+                    {/* ─── PROMOTION BUTTON: Only show if NOT featured ── */}
+                    {!isFeatured ? (
+                      <Button 
+                        variant="outlined" color="error" size="small" fullWidth startIcon={<FlashOnIcon />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate('/payment', { 
+                            state: { 
+                              targetProductId: item.id, 
+                              promoAmount: promoFee, 
+                              itemTitle: item.title 
+                            } 
+                          });
+                        }}
+                        sx={{ 
+                          fontWeight: '800', 
+                          borderRadius: '8px', 
+                          textTransform: 'none', 
+                          py: 0.8, 
+                          borderWidth: '1.5px', 
+                          '&:hover': { borderWidth: '1.5px', bgcolor: 'rgba(211,47,47,0.03)' },
+                          animation: 'pulse 2s infinite',
+                          '@keyframes pulse': {
+                            '0%': { opacity: 1 },
+                            '50%': { opacity: 0.7 },
+                            '100%': { opacity: 1 },
+                          }
+                        }}
+                      >
+                        <FlashOnIcon sx={{ mr: 0.5, fontSize: '16px' }} />
+                        Boost Listing via Mobile Money
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="contained" 
+                        color="success" 
+                        size="small" 
+                        fullWidth 
+                        disabled
+                        startIcon={<VerifiedIcon />}
+                        sx={{ 
+                          fontWeight: '800', 
+                          borderRadius: '8px', 
+                          textTransform: 'none', 
+                          py: 0.8,
+                          opacity: 0.8,
+                          bgcolor: '#e8f5e9',
+                          color: '#2e7d32',
+                          '&.Mui-disabled': {
+                            bgcolor: '#e8f5e9',
+                            color: '#2e7d32',
+                            opacity: 0.8,
+                          }
+                        }}
+                      >
+                        ✅ Already Featured
+                      </Button>
+                    )}
+                  </Box>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
     </Box>
