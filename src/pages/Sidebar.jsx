@@ -1,5 +1,6 @@
 // Open your project ──> src/pages/Sidebar.jsx
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -11,20 +12,15 @@ import {
   Paper, 
   Divider,
   Chip,
-  styled 
+  styled,
+  CircularProgress 
 } from '@mui/material';
-import LaptopIcon from '@mui/icons-material/Laptop';
-import ElectricalServicesIcon from '@mui/icons-material/ElectricalServices';
-import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
-import MemoryIcon from '@mui/icons-material/Memory';
-import ScreenShareIcon from '@mui/icons-material/ScreenShare';
-import RouterIcon from '@mui/icons-material/Router';
-import CableIcon from '@mui/icons-material/Cable';
 import CategoryIcon from '@mui/icons-material/Category';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import LockIcon from '@mui/icons-material/Lock';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import { useNavigate } from 'react-router-dom';
+import api from '../api';
 
 const StyledSidebarContainer = styled(Box)(({ theme }) => ({
   backgroundColor: '#ffffff',
@@ -50,21 +46,71 @@ const Sidebar = ({ currentCategory, onCategoryChange }) => {
   const navigate = useNavigate();
   const isAuthenticated = Boolean(localStorage.getItem("ACCESS_TOKEN"));
 
-  const electronicCategories = [
-    { id: 'ALL', label: 'All Spares & Modules', icon: <CategoryIcon /> },
-    { id: 'LAPTOP', label: 'Laptop Components', icon: <LaptopIcon /> },
-    { id: 'POWER', label: 'Inverters & Solar Spares', icon: <ElectricalServicesIcon /> },
-    { id: 'BATTERY', label: 'Power Packs & Batteries', icon: <BatteryChargingFullIcon /> },
-    { id: 'IC', label: 'Microchips & Motherboards', icon: <MemoryIcon /> },
-    { id: 'SCREEN', label: 'Replacement Displays', icon: <ScreenShareIcon /> },
-    { id: 'NET', label: 'Networking & Modems', icon: <RouterIcon /> },
-    { id: 'ACCESS', label: 'Cables & Adaptors', icon: <CableIcon /> },
-  ];
+  // ─── State ──────────────────────────────────────────────────────
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ─── Fetch categories from backend ─────────────────────────────
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+
+    api.get('api/categories/')
+      .then(response => {
+        if (isMounted) {
+          setCategories(response.data);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to fetch categories:", err);
+        if (isMounted) {
+          setError("Could not load categories.");
+          setLoading(false);
+        }
+      });
+
+    return () => { isMounted = false; };
+  }, []);
+
+  // ─── Helper: get icon for category ─────────────────────────────
+  const getCategoryIcon = (categoryName) => {
+    // You can customize this mapping based on category names or slugs
+    const name = categoryName.toLowerCase();
+    if (name.includes('laptop')) return <LaptopIcon />;
+    if (name.includes('inverter') || name.includes('solar')) return <ElectricalServicesIcon />;
+    if (name.includes('battery') || name.includes('power')) return <BatteryChargingFullIcon />;
+    if (name.includes('microchip') || name.includes('motherboard')) return <MemoryIcon />;
+    if (name.includes('display') || name.includes('screen')) return <ScreenShareIcon />;
+    if (name.includes('network') || name.includes('modem')) return <RouterIcon />;
+    if (name.includes('cable') || name.includes('adaptor')) return <CableIcon />;
+    return <CategoryIcon />;
+  };
+
+  // ─── Loading state ─────────────────────────────────────────────
+  if (loading) {
+    return (
+      <StyledSidebarContainer sx={{ display: { xs: 'none', sm: 'block' } }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+          <CircularProgress size={30} />
+        </Box>
+      </StyledSidebarContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <StyledSidebarContainer sx={{ display: { xs: 'none', sm: 'block' } }}>
+        <Typography color="error" variant="caption">{error}</Typography>
+      </StyledSidebarContainer>
+    );
+  }
 
   return (
     <StyledSidebarContainer sx={{ display: { xs: 'none', sm: 'block' } }}>
       
-      {/* 🌟 SOTA PORTAL ACTION LINK: Enforces security check before allowing uploads */}
+      {/* 🌟 SELLER UPLOAD CARD */}
       <Paper 
         elevation={0} 
         variant="outlined" 
@@ -101,12 +147,32 @@ const Sidebar = ({ currentCategory, onCategoryChange }) => {
 
       <TaxonomyCard variant="outlined">
         <List sx={{ p: 0 }}>
-          {electronicCategories.map((category) => {
-            const isSelected = currentCategory === category.id;
+          {/* ─── "All" category ──────────────────────────────────── */}
+          <ListItem disablePadding>
+            <ListItemButton 
+              onClick={() => onCategoryChange && onCategoryChange('ALL')}
+              sx={{
+                py: 1.2, px: 2.5,
+                borderLeft: currentCategory === 'ALL' ? '4px solid #2e7d32' : '4px solid transparent',
+                backgroundColor: currentCategory === 'ALL' ? '#f1f8e9' : 'transparent',
+                color: currentCategory === 'ALL' ? '#2e7d32' : '#333333',
+                '&:hover': { backgroundColor: currentCategory === 'ALL' ? '#f1f8e9' : '#f9f9f9' }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: '36px', color: currentCategory === 'ALL' ? '#2e7d32' : '#777777' }}>
+                <CategoryIcon />
+              </ListItemIcon>
+              <ListItemText primary="All Categories" primaryTypographyProps={{ fontSize: '13.5px', fontWeight: currentCategory === 'ALL' ? '700' : '500' }} />
+            </ListItemButton>
+          </ListItem>
+
+          {/* ─── Dynamic categories from backend ──────────────────── */}
+          {categories.map((category) => {
+            const isSelected = currentCategory === category.slug;
             return (
               <ListItem key={category.id} disablePadding>
                 <ListItemButton 
-                  onClick={() => onCategoryChange && onCategoryChange(category.id)}
+                  onClick={() => onCategoryChange && onCategoryChange(category.slug)}
                   sx={{
                     py: 1.2, px: 2.5,
                     borderLeft: isSelected ? '4px solid #2e7d32' : '4px solid transparent',
@@ -116,9 +182,9 @@ const Sidebar = ({ currentCategory, onCategoryChange }) => {
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: '36px', color: isSelected ? '#2e7d32' : '#777777' }}>
-                    {category.icon}
+                    {getCategoryIcon(category.name)}
                   </ListItemIcon>
-                  <ListItemText primary={category.label} primaryTypographyProps={{ fontSize: '13.5px', fontWeight: isSelected ? '700' : '500' }} />
+                  <ListItemText primary={category.name} primaryTypographyProps={{ fontSize: '13.5px', fontWeight: isSelected ? '700' : '500' }} />
                 </ListItemButton>
               </ListItem>
             );
