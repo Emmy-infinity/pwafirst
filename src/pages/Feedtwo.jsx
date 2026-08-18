@@ -20,20 +20,27 @@ export default function GalleryView({ selectedCategory }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ─── Dynamic data from backend ────────────────────────────────────
+  const [categories, setCategories] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [promoFee, setPromoFee] = useState(20000);
+  const [configLoading, setConfigLoading] = useState(true);
+
+  // ─── Filters ──────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState('ALL');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [conditionFilter, setConditionFilter] = useState('ALL');
-  const [maxPrice, setMaxPrice] = useState(5000000); 
+  const [maxPrice, setMaxPrice] = useState(5000000);
 
+  // ─── Fetch products ──────────────────────────────────────────────
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
     
-    // 📡 Fetches records from your active live Django web service container
     api.get('api/products/')
       .then(response => {
         if (isMounted) {
-          // 🌟 THE SAFE STRUCTURAL FALLBACK: Natively parses both loose arrays and paginated results objects
           const rawData = response.data;
           if (Array.isArray(rawData)) {
             setProducts(rawData);
@@ -56,13 +63,53 @@ export default function GalleryView({ selectedCategory }) {
     return () => { isMounted = false; }; 
   }, []);
 
+  // ─── Fetch categories, locations, and promotion fee ─────────────
+  useEffect(() => {
+    let isMounted = true;
+    setConfigLoading(true);
+
+    const fetchConfig = async () => {
+      try {
+        // Fetch all three in parallel
+        const [feeRes, catRes, locRes] = await Promise.all([
+          api.get('api/site-config/'),
+          api.get('api/categories/'),
+          api.get('api/locations/')
+        ]);
+
+        if (isMounted) {
+          setPromoFee(feeRes.data.promotion_fee || 20000);
+          setCategories(catRes.data);
+          setLocations(locRes.data);
+          setConfigLoading(false);
+        }
+      } catch (err) {
+        console.error("Failed to fetch configuration data:", err);
+        if (isMounted) {
+          // Use fallbacks
+          setPromoFee(20000);
+          setCategories([]);
+          setLocations([]);
+          setConfigLoading(false);
+        }
+      }
+    };
+
+    fetchConfig();
+
+    return () => { isMounted = false; };
+  }, []);
+
+  // ─── Filter products ─────────────────────────────────────────────
   const filteredProducts = useMemo(() => {
     let result = products;
 
+    // External category filter (from navigation)
     if (selectedCategory && selectedCategory !== 'ALL') {
-      result = result.filter(p => String(p.category || '').toUpperCase() === String(selectedCategory).toUpperCase());
+      result = result.filter(p => String(p.category_slug || '').toUpperCase() === String(selectedCategory).toUpperCase());
     }
 
+    // Search
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase();
       result = result.filter(p => 
@@ -71,19 +118,28 @@ export default function GalleryView({ selectedCategory }) {
       );
     }
 
-    if (locationFilter !== 'ALL') {
-      result = result.filter(p => p.item_location === locationFilter);
+    // Dynamic category filter
+    if (categoryFilter !== 'ALL') {
+      result = result.filter(p => p.category_slug === categoryFilter);
     }
 
+    // Dynamic location filter
+    if (locationFilter !== 'ALL') {
+      result = result.filter(p => p.location_code === locationFilter);
+    }
+
+    // Condition filter
     if (conditionFilter !== 'ALL') {
       result = result.filter(p => p.condition === conditionFilter);
     }
 
+    // Price
     result = result.filter(p => (parseFloat(p.price) || 0) <= maxPrice);
 
     return result;
-  }, [products, selectedCategory, searchQuery, locationFilter, conditionFilter, maxPrice]);
+  }, [products, selectedCategory, searchQuery, categoryFilter, locationFilter, conditionFilter, maxPrice]);
 
+  // ─── Thumbnail helper ────────────────────────────────────────────
   const getOptimizedThumbnail = (photosArray) => {
     if (!photosArray || !Array.isArray(photosArray) || photosArray.length === 0) {
       return 'https://cloudinary.com';
@@ -97,20 +153,24 @@ export default function GalleryView({ selectedCategory }) {
     return rawUrl || 'https://cloudinary.com';
   };
 
-  if (loading) return (
+  // ─── Loading states ──────────────────────────────────────────────
+  if (loading || configLoading) return (
     <Box display="flex" flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center" minHeight="50vh">
       <CircularProgress color="success" size={40} />
-      <Typography variant="body2" sx={{ mt: 2, color: '#666', fontWeight: '500' }}>Streaming wholesale component rows...</Typography>
+      <Typography variant="body2" sx={{ mt: 2, color: '#666', fontWeight: '500' }}>
+        {loading ? 'Streaming wholesale component rows...' : 'Loading configuration...'}
+      </Typography>
     </Box>
   );
 
   if (error) return (
     <Box flexGrow={1} sx={{ p: 2 }}><Alert severity="error">{error}</Alert></Box>
   );
+
   return (
     <Box sx={{ flexGrow: 1, p: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
       
-      {/* 🎛️ REFINED INPUT CONTROL DECK */}
+      {/* 🎛️ FILTER CONTROLS */}
       <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: '16px', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: 2.5, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FilterAltIcon color="success" />
@@ -126,17 +186,27 @@ export default function GalleryView({ selectedCategory }) {
           </Grid>
           
           <Grid item xs={6} sm={3} md={4}>
-            <TextField select size="small" label="Storage Hub" fullWidth value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)}>
-              <MenuItem value="ALL">All Regional Hubs</MenuItem>
-              <MenuItem value="GULU">Gulu City</MenuItem>
-              <MenuItem value="LIRA">Lira City</MenuItem>
-              <MenuItem value="KLA">Kampala Hub</MenuItem>
-              <MenuItem value="ARUA">Arua City</MenuItem>
+            <TextField select size="small" label="Category" fullWidth value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+              <MenuItem value="ALL">All Categories</MenuItem>
+              {categories.map(cat => (
+                <MenuItem key={cat.id} value={cat.slug}>{cat.name}</MenuItem>
+              ))}
             </TextField>
           </Grid>
 
           <Grid item xs={6} sm={3} md={4}>
-            <TextField select size="small" label="Quality Condition" fullWidth value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)}>
+            <TextField select size="small" label="Location" fullWidth value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)}>
+              <MenuItem value="ALL">All Locations</MenuItem>
+              {locations.map(loc => (
+                <MenuItem key={loc.id} value={loc.code}>{loc.name}</MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+        </Grid>
+
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField select size="small" label="Condition" fullWidth value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)}>
               <MenuItem value="ALL">All Conditions</MenuItem>
               <MenuItem value="NEW">Brand New / Sealed</MenuItem>
               <MenuItem value="REFURB">Refurbished / Tested</MenuItem>
@@ -144,19 +214,18 @@ export default function GalleryView({ selectedCategory }) {
               <MenuItem value="SCRAP">Scrap / For Spares</MenuItem>
             </TextField>
           </Grid>
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ px: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: '800', color: '#444', mb: 1, display: 'block' }}>
+                Max Price: <strong style={{ color: '#2e7d32' }}>UGX {maxPrice.toLocaleString()}</strong>
+              </Typography>
+              <Slider value={maxPrice} min={5000} max={5000000} step={5000} onChange={(e, val) => setMaxPrice(val)} color="success" size="small" />
+            </Box>
+          </Grid>
         </Grid>
-
-        <Divider />
-
-        <Box sx={{ px: 1 }}>
-          <Typography variant="caption" sx={{ fontWeight: '800', color: '#444', mb: 1, display: 'block' }}>
-            Max Price Threshold: <strong style={{ color: '#2e7d32' }}>UGX {maxPrice.toLocaleString()}</strong>
-          </Typography>
-          <Slider value={maxPrice} min={5000} max={5000000} step={5000} onChange={(e, val) => setMaxPrice(val)} color="success" size="small" />
-        </Box>
       </Paper>
 
-      {/* 🏪 SYSTEM SHOWCASE RAIL */}
+      {/* 🏪 PRODUCT CARDS */}
       {filteredProducts.length === 0 ? (
         <Paper elevation={0} sx={{ p: 6, textAlignment: 'center', borderRadius: '16px', border: '1px dashed #ccc', bgcolor: '#fafafa' }}>
           <Typography variant="h6" align="center" color="text.secondary" sx={{ fontWeight: 'bold' }}>No components match criteria</Typography>
@@ -193,16 +262,26 @@ export default function GalleryView({ selectedCategory }) {
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, mt: 'auto', pt: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
                       <LocationOnIcon sx={{ fontSize: '16px', color: '#d32f2f' }} />
-                      <Typography variant="caption" sx={{ fontWeight: '600' }}>{item.item_location_display || item.item_location}</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: '600' }}>
+                        {item.location_name || item.location_code || 'No location'}
+                      </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
                       <InventoryIcon sx={{ fontSize: '16px' }} />
-                      <Typography variant="caption" sx={{ fontWeight: '600' }}>Stock Counter: <strong>{item.stock_count} units</strong></Typography>
+                      <Typography variant="caption" sx={{ fontWeight: '600' }}>
+                        Stock: <strong>{item.stock_count} units</strong>
+                      </Typography>
                     </Box>
+                    {item.category_name && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
+                        <Typography variant="caption" sx={{ fontWeight: '600' }}>
+                          Category: <strong>{item.category_name}</strong>
+                        </Typography>
+                      </Box>
+                    )}
                   </Box>
                 </CardContent>
 
-                {/* DUAL ACTION LINK MATRIX BUTTON SECTIONS */}
                 <Box sx={{ px: 2, pb: 2, pt: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Button 
                     variant="contained" color="success" size="small" fullWidth onClick={() => navigate(`/product/${item.id}`)} endIcon={<DoubleArrowIcon />} 
@@ -215,7 +294,13 @@ export default function GalleryView({ selectedCategory }) {
                     variant="outlined" color="error" size="small" fullWidth startIcon={<FlashOnIcon />}
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate('/payment', { state: { targetProductId: item.id, promoAmount: 20000, itemTitle: item.title } });
+                      navigate('/payment', { 
+                        state: { 
+                          targetProductId: item.id, 
+                          promoAmount: promoFee,   // ✅ Dynamic fee from backend
+                          itemTitle: item.title 
+                        } 
+                      });
                     }}
                     sx={{ fontWeight: '800', borderRadius: '8px', textTransform: 'none', py: 0.8, borderWidth: '1.5px', '&:hover': { borderWidth: '1.5px', bgcolor: 'rgba(211,47,47,0.03)' } }}
                   >
@@ -230,7 +315,3 @@ export default function GalleryView({ selectedCategory }) {
     </Box>
   );
 }
-
-
-
-  
