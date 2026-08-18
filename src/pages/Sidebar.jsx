@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, List, ListItem, ListItemButton, 
   ListItemIcon, ListItemText, Paper, Divider, Chip, 
-  styled, CircularProgress, Button 
+  styled, CircularProgress, Button, Link 
 } from '@mui/material';
 import CategoryIcon from '@mui/icons-material/Category';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -113,7 +113,7 @@ const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
   try {
     return (
       <StyledSidebarContainer>
-        {/* 🌟 PROMINENT SELLER BUTTON – ATTRACTIVE & CLEAR */}
+        {/* 🌟 SELLER CARD WITH REGISTER LINK */}
         <Paper
           elevation={3}
           sx={{
@@ -139,34 +139,78 @@ const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
           <Typography variant="body2" sx={{ textAlign: 'center', opacity: 0.85, mb: 1 }}>
             List your items and reach thousands of buyers.
           </Typography>
-          <Button
-            variant="contained"
-            size="large"
-            fullWidth
-            onClick={() => navigate('/upload')}
-            sx={{
-              bgcolor: '#fff',
-              color: '#1b5e20',
-              fontWeight: 'bold',
-              borderRadius: '30px',
-              textTransform: 'none',
-              py: 1.5,
-              '&:hover': {
-                bgcolor: '#f5f5f5',
-                transform: 'scale(1.03)',
-                boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
-              },
-              '&:active': {
-                transform: 'scale(0.95)',
-              }
-            }}
-          >
-            {isAuthenticated ? '📦 Start Selling' : '🔑 Sign In to Sell'}
-          </Button>
-          {!isAuthenticated && (
-            <Typography variant="caption" sx={{ opacity: 0.7, mt: 0.5 }}>
-              You need an account to list items.
-            </Typography>
+
+          {isAuthenticated ? (
+            <Button
+              variant="contained"
+              size="large"
+              fullWidth
+              onClick={() => navigate('/upload')}
+              sx={{
+                bgcolor: '#fff',
+                color: '#1b5e20',
+                fontWeight: 'bold',
+                borderRadius: '30px',
+                textTransform: 'none',
+                py: 1.5,
+                '&:hover': {
+                  bgcolor: '#f5f5f5',
+                  transform: 'scale(1.03)',
+                  boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                }
+              }}
+            >
+              📦 Start Selling
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                onClick={() => navigate('/login')}
+                sx={{
+                  bgcolor: '#fff',
+                  color: '#1b5e20',
+                  fontWeight: 'bold',
+                  borderRadius: '30px',
+                  textTransform: 'none',
+                  py: 1.5,
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
+                    transform: 'scale(1.03)',
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
+                  },
+                  '&:active': {
+                    transform: 'scale(0.95)',
+                  }
+                }}
+              >
+                🔑 Sign In
+              </Button>
+              <Typography variant="caption" sx={{ opacity: 0.8, mt: 0.5 }}>
+                Don't have an account?{' '}
+                <Link
+                  component="button"
+                  onClick={() => navigate('/register')}
+                  sx={{
+                    color: '#fff',
+                    fontWeight: 'bold',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    background: 'none',
+                    border: 'none',
+                    fontSize: 'inherit',
+                    '&:hover': { opacity: 0.8 }
+                  }}
+                >
+                  Register here
+                </Link>
+              </Typography>
+            </>
           )}
         </Paper>
 
