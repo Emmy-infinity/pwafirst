@@ -1,5 +1,4 @@
-// implemented tested sandbox – works with DEBUG=True
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Box, Typography, TextField, Button, Paper, 
@@ -17,15 +16,32 @@ export default function MoMoCheckoutModal() {
   const navigate = useNavigate();
   
   const targetProductId = location.state?.targetProductId || null;
-  const promoAmount = location.state?.promoAmount || 5000;
   const itemTitle = location.state?.itemTitle || "Wholesale Hardware Component";
 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [promotionFee, setPromotionFee] = useState(20000); // default fallback
+  const [fetchingFee, setFetchingFee] = useState(true);
 
-  // Network detection – returns the network name for display and API value
+  // Fetch the current promotion fee from the backend
+  useEffect(() => {
+    const fetchFee = async () => {
+      try {
+        const response = await api.get('api/site-config/');
+        const fee = response.data.promotion_fee || 20000;
+        setPromotionFee(parseFloat(fee));
+      } catch (err) {
+        console.error('Failed to fetch promotion fee:', err);
+        setPromotionFee(20000); // fallback
+      } finally {
+        setFetchingFee(false);
+      }
+    };
+    fetchFee();
+  }, []);
+
   const detectCarrierNetwork = (num) => {
     const cleanNum = num.replace(/\s+/g, '');
     if (cleanNum.startsWith('25677') || cleanNum.startsWith('25678') || cleanNum.startsWith('077') || cleanNum.startsWith('078')) {
@@ -47,18 +63,15 @@ export default function MoMoCheckoutModal() {
       return;
     }
 
-    // Format phone to international format (256)
     let formattedPhone = phoneNumber.trim().replace(/\s+/g, '');
     if (formattedPhone.startsWith('07')) {
       formattedPhone = '256' + formattedPhone.substring(1);
     }
-
     if (!formattedPhone.startsWith('256') || formattedPhone.length !== 12) {
       setError("Invalid Ugandan mobile number. Use format: 077XXXXXXX or 25677XXXXXXX");
       return;
     }
 
-    // Validate network detection
     if (!carrier.network) {
       setError("Could not detect network. Please ensure the number is MTN or Airtel.");
       return;
@@ -69,50 +82,47 @@ export default function MoMoCheckoutModal() {
     setSuccess(false);
 
     try {
-      // ============================================================
-      // STEP 1: Initiate the payment (creates a pending transaction)
-      // ============================================================
+      // Initiate payment (the backend ignores the amount, uses its own)
       const initPayload = {
         product: targetProductId,
         phone_number: formattedPhone,
-        network: carrier.network,   // 'MTN' or 'AIRTEL'
+        network: carrier.network,
+        // amount is not sent; backend uses admin fee
       };
 
       const initResponse = await api.post('api/payments/', initPayload);
       const { tx_ref } = initResponse.data;
       console.log('💰 Payment initiated, tx_ref:', tx_ref);
 
-      // ============================================================
-      // STEP 2: Manually confirm the transaction (simulates webhook)
-      // ============================================================
-      // Note: /api/test-payment/ is only available when DEBUG=True.
-      // It will return 404 if DEBUG=False, but we can try it anyway.
+      // Optionally simulate webhook confirmation for testing (only in DEBUG)
       try {
-        const confirmPayload = { tx_ref };
-        await api.post('api/test-payment/', confirmPayload);
-        console.log('✅ Transaction confirmed successfully');
+        await api.post('api/test-payment/', { tx_ref });
+        console.log('✅ Transaction confirmed manually');
       } catch (confirmErr) {
-        // If the test endpoint is not available (e.g., DEBUG=False),
-        // we just log and continue – the transaction remains PENDING,
-        // and the real webhook will confirm it later.
-        console.warn('⚠️ Manual confirmation failed (probably DEBUG=False):', confirmErr.message);
-        // We still show success to the user because the initiation worked.
-        // In production, they'll receive the STK push and the webhook will handle it.
+        console.warn('Manual confirmation failed (probably DEBUG=False):', confirmErr.message);
       }
 
       setSuccess(true);
       setLoading(false);
       setTimeout(() => navigate('/'), 4000);
-
     } catch (err) {
-      console.error("💥 Payment error:", err.response?.data || err.message);
-      // Show the backend error message, or a fallback
+      console.error('💥 Payment error:', err.response?.data || err.message);
       const errorMsg = err.response?.data?.error || err.response?.data?.message || 
                        "Failed to trigger Mobile Money prompt. Verify connection rules.";
       setError(errorMsg);
       setLoading(false);
     }
   };
+
+  // Display loading while fetching fee
+  if (fetchingFee) {
+    return (
+      <Box sx={{ maxWidth: '500px', width: '100%', mx: 'auto', p: 4, textAlign: 'center' }}>
+        <CircularProgress />
+        <Typography variant="body2" sx={{ mt: 2 }}>Loading promotion fee...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: '500px', width: '100%', mx: 'auto', p: 1 }}>
@@ -148,7 +158,7 @@ export default function MoMoCheckoutModal() {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="body2" color="text.secondary">Sponsorship Rate:</Typography>
               <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#2e7d32' }}>
-                UGX {promoAmount.toLocaleString()}
+                UGX {promotionFee.toLocaleString()}
               </Typography>
             </Box>
           </CardContent>
@@ -216,7 +226,7 @@ export default function MoMoCheckoutModal() {
                 }}
                 disabled={loading || phoneNumber.trim().length < 9}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : `Authorize UGX ${promoAmount.toLocaleString()} Boost`}
+                {loading ? <CircularProgress size={24} color="inherit" /> : `Authorize UGX ${promotionFee.toLocaleString()} Boost`}
               </Button>
             </Grid>
           </Grid>
