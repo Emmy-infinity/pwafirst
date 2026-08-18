@@ -19,6 +19,13 @@ import CategoryIcon from '@mui/icons-material/Category';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import LockIcon from '@mui/icons-material/Lock';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import LaptopIcon from '@mui/icons-material/Laptop';
+import ElectricalServicesIcon from '@mui/icons-material/ElectricalServices';
+import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
+import MemoryIcon from '@mui/icons-material/Memory';
+import ScreenShareIcon from '@mui/icons-material/ScreenShare';
+import RouterIcon from '@mui/icons-material/Router';
+import CableIcon from '@mui/icons-material/Cable';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -42,41 +49,42 @@ const TaxonomyCard = styled(Paper)({
   boxShadow: '0 4px 12px rgba(0,0,0,0.01)'
 });
 
-const Sidebar = ({ currentCategory, onCategoryChange }) => {
+const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
   const navigate = useNavigate();
   const isAuthenticated = Boolean(localStorage.getItem("ACCESS_TOKEN"));
 
-  // ─── State ──────────────────────────────────────────────────────
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ─── Fetch categories from backend ─────────────────────────────
+  // ─── Fetch categories ──────────────────────────────────────────
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
 
-    api.get('api/categories/')
-      .then(response => {
+    const fetchCategories = async () => {
+      try {
+        const response = await api.get('api/categories/');
         if (isMounted) {
-          setCategories(response.data);
+          setCategories(Array.isArray(response.data) ? response.data : []);
           setLoading(false);
         }
-      })
-      .catch(err => {
+      } catch (err) {
         console.error("Failed to fetch categories:", err);
         if (isMounted) {
           setError("Could not load categories.");
           setLoading(false);
         }
-      });
+      }
+    };
+
+    fetchCategories();
 
     return () => { isMounted = false; };
   }, []);
 
-  // ─── Helper: get icon for category ─────────────────────────────
+  // ─── Icon mapping (safe – no missing imports) ────────────────
   const getCategoryIcon = (categoryName) => {
-    // You can customize this mapping based on category names or slugs
+    if (!categoryName) return <CategoryIcon />;
     const name = categoryName.toLowerCase();
     if (name.includes('laptop')) return <LaptopIcon />;
     if (name.includes('inverter') || name.includes('solar')) return <ElectricalServicesIcon />;
@@ -87,6 +95,16 @@ const Sidebar = ({ currentCategory, onCategoryChange }) => {
     if (name.includes('cable') || name.includes('adaptor')) return <CableIcon />;
     return <CategoryIcon />;
   };
+
+  // ─── Handle category click ────────────────────────────────────
+  const handleCategoryClick = (slug) => {
+    if (onCategoryChange) {
+      onCategoryChange(slug);
+    }
+  };
+
+  // ─── Fallback: show sidebar with "All" only if API fails ────
+  const displayCategories = error ? [] : categories;
 
   // ─── Loading state ─────────────────────────────────────────────
   if (loading) {
@@ -99,25 +117,18 @@ const Sidebar = ({ currentCategory, onCategoryChange }) => {
     );
   }
 
-  if (error) {
-    return (
-      <StyledSidebarContainer sx={{ display: { xs: 'none', sm: 'block' } }}>
-        <Typography color="error" variant="caption">{error}</Typography>
-      </StyledSidebarContainer>
-    );
-  }
-
   return (
     <StyledSidebarContainer sx={{ display: { xs: 'none', sm: 'block' } }}>
       
-      {/* 🌟 SELLER UPLOAD CARD */}
+      {/* ─── SELLER UPLOAD CARD ──────────────────────────────────── */}
       <Paper 
         elevation={0} 
         variant="outlined" 
         onClick={() => navigate('/upload')}
         sx={{ 
           p: 2, borderRadius: '12px', cursor: 'pointer', backgroundColor: '#fafffa', borderColor: '#c8e6c9',
-          transition: 'all 0.2s ease', '&:hover': { backgroundColor: '#e8f5e9', borderColor: '#81c784' }
+          transition: 'all 0.2s ease', 
+          '&:hover': { backgroundColor: '#e8f5e9', borderColor: '#81c784' }
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
@@ -131,14 +142,29 @@ const Sidebar = ({ currentCategory, onCategoryChange }) => {
         </Typography>
         
         {isAuthenticated ? (
-          <Chip icon={<VerifiedUserIcon style={{ color: '#2e7d32', fontSize: '14px' }} />} label="Access Unlocked" size="small" color="success" variant="outlined" sx={{ fontWeight: 'bold' }} />
+          <Chip 
+            icon={<VerifiedUserIcon style={{ color: '#2e7d32', fontSize: '14px' }} />} 
+            label="Access Unlocked" 
+            size="small" 
+            color="success" 
+            variant="outlined" 
+            sx={{ fontWeight: 'bold' }} 
+          />
         ) : (
-          <Chip icon={<LockIcon style={{ fontSize: '14px' }} />} label="Sign-In Required to Sell" size="small" color="warning" variant="outlined" sx={{ fontWeight: 'bold' }} />
+          <Chip 
+            icon={<LockIcon style={{ fontSize: '14px' }} />} 
+            label="Sign-In Required to Sell" 
+            size="small" 
+            color="warning" 
+            variant="outlined" 
+            sx={{ fontWeight: 'bold' }} 
+          />
         )}
       </Paper>
 
       <Divider />
 
+      {/* ─── CATEGORY LIST ────────────────────────────────────────── */}
       <Box sx={{ px: 1 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: '800', color: '#666', textTransform: 'uppercase', letterSpacing: '0.8px', fontSize: '11px' }}>
           Spares Categories
@@ -147,10 +173,10 @@ const Sidebar = ({ currentCategory, onCategoryChange }) => {
 
       <TaxonomyCard variant="outlined">
         <List sx={{ p: 0 }}>
-          {/* ─── "All" category ──────────────────────────────────── */}
+          {/* "All" category – always present */}
           <ListItem disablePadding>
             <ListItemButton 
-              onClick={() => onCategoryChange && onCategoryChange('ALL')}
+              onClick={() => handleCategoryClick('ALL')}
               sx={{
                 py: 1.2, px: 2.5,
                 borderLeft: currentCategory === 'ALL' ? '4px solid #2e7d32' : '4px solid transparent',
@@ -162,33 +188,59 @@ const Sidebar = ({ currentCategory, onCategoryChange }) => {
               <ListItemIcon sx={{ minWidth: '36px', color: currentCategory === 'ALL' ? '#2e7d32' : '#777777' }}>
                 <CategoryIcon />
               </ListItemIcon>
-              <ListItemText primary="All Categories" primaryTypographyProps={{ fontSize: '13.5px', fontWeight: currentCategory === 'ALL' ? '700' : '500' }} />
+              <ListItemText 
+                primary="All Categories" 
+                primaryTypographyProps={{ fontSize: '13.5px', fontWeight: currentCategory === 'ALL' ? '700' : '500' }} 
+              />
             </ListItemButton>
           </ListItem>
 
-          {/* ─── Dynamic categories from backend ──────────────────── */}
-          {categories.map((category) => {
-            const isSelected = currentCategory === category.slug;
-            return (
-              <ListItem key={category.id} disablePadding>
-                <ListItemButton 
-                  onClick={() => onCategoryChange && onCategoryChange(category.slug)}
-                  sx={{
-                    py: 1.2, px: 2.5,
-                    borderLeft: isSelected ? '4px solid #2e7d32' : '4px solid transparent',
-                    backgroundColor: isSelected ? '#f1f8e9' : 'transparent',
-                    color: isSelected ? '#2e7d32' : '#333333',
-                    '&:hover': { backgroundColor: isSelected ? '#f1f8e9' : '#f9f9f9' }
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: '36px', color: isSelected ? '#2e7d32' : '#777777' }}>
-                    {getCategoryIcon(category.name)}
-                  </ListItemIcon>
-                  <ListItemText primary={category.name} primaryTypographyProps={{ fontSize: '13.5px', fontWeight: isSelected ? '700' : '500' }} />
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
+          {/* Dynamic categories */}
+          {error ? (
+            <ListItem disablePadding>
+              <ListItemButton sx={{ py: 1.2, px: 2.5 }}>
+                <ListItemText 
+                  primary="Could not load categories" 
+                  primaryTypographyProps={{ fontSize: '13px', color: '#999' }} 
+                />
+              </ListItemButton>
+            </ListItem>
+          ) : displayCategories.length === 0 ? (
+            <ListItem disablePadding>
+              <ListItemButton sx={{ py: 1.2, px: 2.5 }}>
+                <ListItemText 
+                  primary="No categories added yet" 
+                  primaryTypographyProps={{ fontSize: '13px', color: '#999' }} 
+                />
+              </ListItemButton>
+            </ListItem>
+          ) : (
+            displayCategories.map((category) => {
+              const isSelected = currentCategory === category.slug;
+              return (
+                <ListItem key={category.id} disablePadding>
+                  <ListItemButton 
+                    onClick={() => handleCategoryClick(category.slug)}
+                    sx={{
+                      py: 1.2, px: 2.5,
+                      borderLeft: isSelected ? '4px solid #2e7d32' : '4px solid transparent',
+                      backgroundColor: isSelected ? '#f1f8e9' : 'transparent',
+                      color: isSelected ? '#2e7d32' : '#333333',
+                      '&:hover': { backgroundColor: isSelected ? '#f1f8e9' : '#f9f9f9' }
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: '36px', color: isSelected ? '#2e7d32' : '#777777' }}>
+                      {getCategoryIcon(category.name)}
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary={category.name} 
+                      primaryTypographyProps={{ fontSize: '13.5px', fontWeight: isSelected ? '700' : '500' }} 
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })
+          )}
         </List>
       </TaxonomyCard>
 
