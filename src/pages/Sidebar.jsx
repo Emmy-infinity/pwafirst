@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, List, ListItem, ListItemButton, 
   ListItemIcon, ListItemText, Paper, Divider, Chip, 
-  styled, CircularProgress 
+  styled, CircularProgress, Button 
 } from '@mui/material';
 import CategoryIcon from '@mui/icons-material/Category';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -16,6 +16,7 @@ import MemoryIcon from '@mui/icons-material/Memory';
 import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import RouterIcon from '@mui/icons-material/Router';
 import CableIcon from '@mui/icons-material/Cable';
+import SellIcon from '@mui/icons-material/Sell';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -56,7 +57,6 @@ const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
       try {
         const response = await api.get('api/categories/');
         if (isMounted) {
-          // Safely extract array
           const data = response?.data || [];
           setCategories(Array.isArray(data) ? data : []);
         }
@@ -88,7 +88,7 @@ const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
       if (name.includes('cable') || name.includes('adaptor')) return <CableIcon />;
       return <CategoryIcon />;
     } catch {
-      return <CategoryIcon />; // fallback if something goes wrong
+      return <CategoryIcon />;
     }
   };
 
@@ -113,39 +113,69 @@ const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
   try {
     return (
       <StyledSidebarContainer>
-        {/* Seller Card */}
-        <Paper 
-          elevation={0} 
-          variant="outlined" 
-          onClick={() => navigate('/upload')}
-          sx={{ 
-            p: 2, borderRadius: '12px', cursor: 'pointer', 
-            backgroundColor: '#fafffa', borderColor: '#c8e6c9',
-            transition: 'all 0.2s ease', 
-            '&:hover': { backgroundColor: '#e8f5e9', borderColor: '#81c784' }
+        {/* 🌟 PROMINENT SELLER BUTTON – ATTRACTIVE & CLEAR */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: 3,
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%)',
+            color: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 1,
+            boxShadow: '0 8px 30px rgba(46,125,50,0.4)',
+            transition: 'transform 0.2s',
+            '&:hover': {
+              transform: 'scale(1.02)',
+            }
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-            <CloudUploadIcon color="success" />
-            <Typography variant="subtitle2" sx={{ fontWeight: '800', color: '#1b5e20' }}>
-              Sell Components Live
-            </Typography>
-          </Box>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-            Upload new electronic spares directly into regional dealer search engines.
+          <SellIcon sx={{ fontSize: 48, color: '#fff', opacity: 0.9 }} />
+          <Typography variant="h6" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+            Start Selling Today
           </Typography>
-          {isAuthenticated ? (
-            <Chip icon={<VerifiedUserIcon sx={{ color: '#2e7d32', fontSize: '14px' }} />} label="Access Unlocked" size="small" color="success" variant="outlined" sx={{ fontWeight: 'bold' }} />
-          ) : (
-            <Chip icon={<LockIcon sx={{ fontSize: '14px' }} />} label="Sign-In Required to Sell" size="small" color="warning" variant="outlined" sx={{ fontWeight: 'bold' }} />
+          <Typography variant="body2" sx={{ textAlign: 'center', opacity: 0.85, mb: 1 }}>
+            List your items and reach thousands of buyers.
+          </Typography>
+          <Button
+            variant="contained"
+            size="large"
+            fullWidth
+            onClick={() => navigate('/upload')}
+            sx={{
+              bgcolor: '#fff',
+              color: '#1b5e20',
+              fontWeight: 'bold',
+              borderRadius: '30px',
+              textTransform: 'none',
+              py: 1.5,
+              '&:hover': {
+                bgcolor: '#f5f5f5',
+                transform: 'scale(1.03)',
+                boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
+              },
+              '&:active': {
+                transform: 'scale(0.95)',
+              }
+            }}
+          >
+            {isAuthenticated ? '📦 Start Selling' : '🔑 Sign In to Sell'}
+          </Button>
+          {!isAuthenticated && (
+            <Typography variant="caption" sx={{ opacity: 0.7, mt: 0.5 }}>
+              You need an account to list items.
+            </Typography>
           )}
         </Paper>
 
         <Divider />
 
+        {/* ─── CATEGORY LIST ────────────────────────────────────────── */}
         <Box sx={{ px: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: '800', color: '#666', textTransform: 'uppercase', letterSpacing: '0.8px', fontSize: '11px' }}>
-            Spares Categories
+            Categories
           </Typography>
         </Box>
 
@@ -170,7 +200,7 @@ const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
               </ListItemButton>
             </ListItem>
 
-            {/* Dynamic categories or error/empty state */}
+            {/* Dynamic categories */}
             {error ? (
               <ListItem disablePadding>
                 <ListItemButton>
@@ -212,12 +242,11 @@ const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
       </StyledSidebarContainer>
     );
   } catch (err) {
-    // If anything during render fails, show a fallback
     console.error('🔥 Sidebar render error:', err);
     return (
       <StyledSidebarContainer>
         <Typography color="error" variant="body2" sx={{ p: 2 }}>
-          Something went wrong in the sidebar. Please check the console.
+          Something went wrong. Please check the console.
         </Typography>
       </StyledSidebarContainer>
     );
