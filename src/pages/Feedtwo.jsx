@@ -306,11 +306,12 @@ export default function GalleryView({ selectedCategory }) {
                 <Card
                   elevation={0}
                   sx={{
+                    // 🔒 Fixed equal card height across breakpoints
+                    height: { xs: 440, sm: 460, md: 500 },
                     borderRadius: '16px',
                     border: '1px solid #eaeaea',
                     display: 'flex',
                     flexDirection: 'column',
-                    height: '100%',
                     backgroundColor: '#ffffff',
                     overflow: 'hidden',
                     transition: 'all 0.2s ease',
@@ -320,24 +321,23 @@ export default function GalleryView({ selectedCategory }) {
                     },
                   }}
                 >
+                  {/* 📸 Fixed image container */}
                   <Box sx={{
-                    position: 'relative',
-                    paddingTop: { xs: '75%', sm: '65%', md: '56.25%' },
+                    height: { xs: 180, sm: 200, md: 220 },
                     bgcolor: '#f7f7f7',
                     overflow: 'hidden',
                     cursor: 'pointer',
+                    position: 'relative',
+                    flexShrink: 0, // Prevent image from shrinking
                   }} onClick={() => navigate(`/product/${item.id}`)}>
                     <CardMedia
                       component="img"
                       image={getOptimizedThumbnail(item.photos)}
                       alt={item.title}
                       style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
                         width: '100%',
                         height: '100%',
-                        objectFit: 'cover',
+                        objectFit: 'cover', // Crop/resize to fill fixed area
                       }}
                     />
                     <Chip
@@ -378,6 +378,7 @@ export default function GalleryView({ selectedCategory }) {
                     flexDirection: 'column',
                     gap: 1,
                     flexGrow: 1,
+                    overflow: 'hidden', // Clip any content that might overflow fixed height
                   }}>
                     <Typography variant="subtitle1" sx={{
                       fontWeight: '800',
@@ -414,6 +415,9 @@ export default function GalleryView({ selectedCategory }) {
                         <Typography variant="caption" sx={{
                           fontWeight: '600',
                           fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                         }}>
                           {item.location_name || item.location_code || 'No location'}
                         </Typography>
@@ -432,6 +436,9 @@ export default function GalleryView({ selectedCategory }) {
                           <Typography variant="caption" sx={{
                             fontWeight: '600',
                             fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
                           }}>
                             Category: <strong>{item.category_name}</strong>
                           </Typography>
@@ -447,6 +454,7 @@ export default function GalleryView({ selectedCategory }) {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 1,
+                    flexShrink: 0, // Keep buttons at bottom, don't compress
                   }}>
                     <Button
                       variant="contained"
