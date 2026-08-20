@@ -306,8 +306,8 @@ export default function GalleryView({ selectedCategory }) {
                 <Card
                   elevation={0}
                   sx={{
-                    // 🔒 Fixed equal card height across breakpoints
-                    height: { xs: 440, sm: 460, md: 500 },
+                    // 🔒 Responsive equal card height
+                    height: { xs: 420, sm: 460, md: 500, xl: 540 },
                     borderRadius: '16px',
                     border: '1px solid #eaeaea',
                     display: 'flex',
@@ -321,14 +321,14 @@ export default function GalleryView({ selectedCategory }) {
                     },
                   }}
                 >
-                  {/* 📸 Fixed image container */}
+                  {/* 📸 Responsive fixed image container */}
                   <Box sx={{
-                    height: { xs: 180, sm: 200, md: 220 },
+                    height: { xs: 170, sm: 200, md: 220, xl: 240 },
                     bgcolor: '#f7f7f7',
                     overflow: 'hidden',
                     cursor: 'pointer',
                     position: 'relative',
-                    flexShrink: 0, // Prevent image from shrinking
+                    flexShrink: 0,
                   }} onClick={() => navigate(`/product/${item.id}`)}>
                     <CardMedia
                       component="img"
@@ -337,7 +337,7 @@ export default function GalleryView({ selectedCategory }) {
                       style={{
                         width: '100%',
                         height: '100%',
-                        objectFit: 'cover', // Crop/resize to fill fixed area
+                        objectFit: 'cover',
                       }}
                     />
                     <Chip
@@ -378,7 +378,7 @@ export default function GalleryView({ selectedCategory }) {
                     flexDirection: 'column',
                     gap: 1,
                     flexGrow: 1,
-                    overflow: 'hidden', // Clip any content that might overflow fixed height
+                    overflow: 'hidden',
                   }}>
                     <Typography variant="subtitle1" sx={{
                       fontWeight: '800',
@@ -454,7 +454,7 @@ export default function GalleryView({ selectedCategory }) {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 1,
-                    flexShrink: 0, // Keep buttons at bottom, don't compress
+                    flexShrink: 0,
                   }}>
                     <Button
                       variant="contained"
