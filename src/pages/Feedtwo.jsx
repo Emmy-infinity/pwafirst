@@ -324,7 +324,7 @@ export default function GalleryView({ selectedCategory }) {
                   <Box sx={{
                     position: 'relative',
                     width: '100%',
-                    paddingTop: { xs: '75%', sm: '65%', md: '56.25%' }, // 4:3 on mobile, 16:9 on desktop
+                    paddingTop: { xs: '75%', sm: '65%', md: '56.25%' },
                     bgcolor: '#f7f7f7',
                     overflow: 'hidden',
                     cursor: 'pointer',
@@ -383,17 +383,23 @@ export default function GalleryView({ selectedCategory }) {
                     flexGrow: 1,
                     overflow: 'hidden',
                   }}>
-                    <Typography variant="subtitle1" sx={{
-                      fontWeight: '800',
-                      color: '#111',
-                      lineHeight: 1.4,
-                      height: '2.6em',
-                      overflow: 'hidden',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
-                    }}>
+                    {/* 🔧 FIXED PRODUCT TITLE */}
+                    <Typography
+                      variant="subtitle1"
+                      title={item.title} // Full title on hover
+                      sx={{
+                        fontWeight: '800',
+                        color: '#111',
+                        lineHeight: 1.4,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        wordBreak: 'break-word',
+                        fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                      }}
+                    >
                       {item.title}
                     </Typography>
 
