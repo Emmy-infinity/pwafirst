@@ -298,20 +298,19 @@ export default function GalleryView({ selectedCategory }) {
           </Typography>
         </Paper>
       ) : (
-        <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
+        <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} alignItems="stretch">
           {filteredProducts.map((item) => {
             const isFeatured = item.is_featured === true;
             return (
-              <Grid item xs={12} sm={6} md={4} xl={3} key={item.id}>
+              <Grid item xs={12} sm={6} md={4} lg={3} key={item.id} style={{ display: 'flex' }}>
                 <Card
                   elevation={0}
                   sx={{
-                    // 🔒 Responsive equal card height
-                    height: { xs: 420, sm: 460, md: 500, xl: 540 },
-                    borderRadius: '16px',
-                    border: '1px solid #eaeaea',
+                    width: '100%',
                     display: 'flex',
                     flexDirection: 'column',
+                    borderRadius: '16px',
+                    border: '1px solid #eaeaea',
                     backgroundColor: '#ffffff',
                     overflow: 'hidden',
                     transition: 'all 0.2s ease',
@@ -321,13 +320,14 @@ export default function GalleryView({ selectedCategory }) {
                     },
                   }}
                 >
-                  {/* 📸 Responsive fixed image container */}
+                  {/* 📸 Image container with responsive aspect ratio */}
                   <Box sx={{
-                    height: { xs: 170, sm: 200, md: 220, xl: 240 },
+                    position: 'relative',
+                    width: '100%',
+                    paddingTop: { xs: '75%', sm: '65%', md: '56.25%' }, // 4:3 on mobile, 16:9 on desktop
                     bgcolor: '#f7f7f7',
                     overflow: 'hidden',
                     cursor: 'pointer',
-                    position: 'relative',
                     flexShrink: 0,
                   }} onClick={() => navigate(`/product/${item.id}`)}>
                     <CardMedia
@@ -335,6 +335,9 @@ export default function GalleryView({ selectedCategory }) {
                       image={getOptimizedThumbnail(item.photos)}
                       alt={item.title}
                       style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
                         width: '100%',
                         height: '100%',
                         objectFit: 'cover',
