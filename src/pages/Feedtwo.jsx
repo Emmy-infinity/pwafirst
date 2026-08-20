@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Box, Grid, Typography, Card, CardContent, CardMedia, 
-  Chip, CircularProgress, Alert, TextField, MenuItem, 
-  Slider, InputAdornment, Paper, Divider, Button 
+import {
+  Box, Grid, Typography, Card, CardContent, CardMedia,
+  Chip, CircularProgress, Alert, TextField, MenuItem,
+  Slider, InputAdornment, Paper, Button
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import DoubleArrowIcon from '@mui/icons-material/DoubleArrow';
-import StarIcon from '@mui/icons-material/Star';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import api from '../api';
@@ -38,7 +37,7 @@ export default function GalleryView({ selectedCategory }) {
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
-    
+
     api.get('api/products/')
       .then(response => {
         if (isMounted) {
@@ -61,7 +60,7 @@ export default function GalleryView({ selectedCategory }) {
         }
       });
 
-    return () => { isMounted = false; }; 
+    return () => { isMounted = false; };
   }, []);
 
   // ─── Fetch categories, locations, and promotion fee ─────────────
@@ -103,36 +102,30 @@ export default function GalleryView({ selectedCategory }) {
   const filteredProducts = useMemo(() => {
     let result = products;
 
-    // External category filter (from sidebar)
     if (selectedCategory && selectedCategory !== 'ALL') {
       result = result.filter(p => String(p.category_slug || '').toUpperCase() === String(selectedCategory).toUpperCase());
     }
 
-    // Search
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase();
-      result = result.filter(p => 
-        (p.title && p.title.toLowerCase().includes(query)) || 
+      result = result.filter(p =>
+        (p.title && p.title.toLowerCase().includes(query)) ||
         (p.description && p.description.toLowerCase().includes(query))
       );
     }
 
-    // Category filter (dropdown)
     if (categoryFilter !== 'ALL') {
       result = result.filter(p => p.category_slug === categoryFilter);
     }
 
-    // Location filter
     if (locationFilter !== 'ALL') {
       result = result.filter(p => p.location_code === locationFilter);
     }
 
-    // Condition filter
     if (conditionFilter !== 'ALL') {
       result = result.filter(p => p.condition === conditionFilter);
     }
 
-    // Price
     result = result.filter(p => (parseFloat(p.price) || 0) <= maxPrice);
 
     return result;
@@ -145,7 +138,7 @@ export default function GalleryView({ selectedCategory }) {
     }
     const firstPhotoObject = photosArray[0];
     const rawUrl = firstPhotoObject?.image_url || firstPhotoObject?.image;
-    
+
     if (rawUrl && rawUrl.includes('cloudinary.com') && !rawUrl.includes('f_auto')) {
       return rawUrl.replace('/upload/', '/upload/f_auto,q_auto,w_400,c_scale/');
     }
@@ -167,25 +160,61 @@ export default function GalleryView({ selectedCategory }) {
   );
 
   return (
-    <Box sx={{ flexGrow: 1, p: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-      
+    <Box sx={{
+      flexGrow: 1,
+      width: '100%',
+      maxWidth: '1600px',
+      mx: 'auto',
+      px: { xs: 1, sm: 2, md: 3 },
+      py: { xs: 1.5, sm: 2, md: 3 },
+      display: 'flex',
+      flexDirection: 'column',
+      gap: { xs: 2, sm: 2.5, md: 3 },
+    }}>
       {/* 🎛️ FILTER CONTROLS */}
-      <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: '16px', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: 2.5, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+      <Paper variant="outlined" sx={{
+        p: { xs: 1.5, sm: 2, md: 3 },
+        borderRadius: '16px',
+        backgroundColor: '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: { xs: 1.5, sm: 2, md: 2.5 },
+        boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FilterAltIcon color="success" />
-          <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#111' }}>Refine Hardware Catalog Index</Typography>
+          <Typography variant="subtitle1" sx={{
+            fontWeight: '900',
+            color: '#111',
+            fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' },
+          }}>
+            Refine Hardware Catalog Index
+          </Typography>
         </Box>
-        
-        <Grid container spacing={2}>
+
+        <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
           <Grid item xs={12} sm={6} md={4}>
             <TextField
-              size="small" label="Search parts or models..." fullWidth value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
+              size="small"
+              label="Search parts or models..."
+              fullWidth
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
+              }}
             />
           </Grid>
-          
-          <Grid item xs={6} sm={3} md={4}>
-            <TextField select size="small" label="Category" fullWidth value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              select
+              size="small"
+              label="Category"
+              fullWidth
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
               <MenuItem value="ALL">All Categories</MenuItem>
               {categories.map(cat => (
                 <MenuItem key={cat.id} value={cat.slug}>{cat.name}</MenuItem>
@@ -193,8 +222,15 @@ export default function GalleryView({ selectedCategory }) {
             </TextField>
           </Grid>
 
-          <Grid item xs={6} sm={3} md={4}>
-            <TextField select size="small" label="Location" fullWidth value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)}>
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              select
+              size="small"
+              label="Location"
+              fullWidth
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+            >
               <MenuItem value="ALL">All Locations</MenuItem>
               {locations.map(loc => (
                 <MenuItem key={loc.id} value={loc.code}>{loc.name}</MenuItem>
@@ -203,9 +239,16 @@ export default function GalleryView({ selectedCategory }) {
           </Grid>
         </Grid>
 
-        <Grid container spacing={2}>
+        <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
           <Grid item xs={12} sm={6}>
-            <TextField select size="small" label="Condition" fullWidth value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)}>
+            <TextField
+              select
+              size="small"
+              label="Condition"
+              fullWidth
+              value={conditionFilter}
+              onChange={(e) => setConditionFilter(e.target.value)}
+            >
               <MenuItem value="ALL">All Conditions</MenuItem>
               <MenuItem value="NEW">Brand New / Sealed</MenuItem>
               <MenuItem value="REFURB">Refurbished / Tested</MenuItem>
@@ -214,11 +257,25 @@ export default function GalleryView({ selectedCategory }) {
             </TextField>
           </Grid>
           <Grid item xs={12} sm={6}>
-            <Box sx={{ px: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: '800', color: '#444', mb: 1, display: 'block' }}>
+            <Box sx={{ px: { xs: 0.5, sm: 1 } }}>
+              <Typography variant="caption" sx={{
+                fontWeight: '800',
+                color: '#444',
+                mb: 1,
+                display: 'block',
+                fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.85rem' },
+              }}>
                 Max Price: <strong style={{ color: '#2e7d32' }}>UGX {maxPrice.toLocaleString()}</strong>
               </Typography>
-              <Slider value={maxPrice} min={5000} max={5000000} step={5000} onChange={(e, val) => setMaxPrice(val)} color="success" size="small" />
+              <Slider
+                value={maxPrice}
+                min={5000}
+                max={5000000}
+                step={5000}
+                onChange={(e, val) => setMaxPrice(val)}
+                color="success"
+                size="small"
+              />
             </Box>
           </Grid>
         </Grid>
@@ -226,62 +283,156 @@ export default function GalleryView({ selectedCategory }) {
 
       {/* 🏪 PRODUCT CARDS */}
       {filteredProducts.length === 0 ? (
-        <Paper elevation={0} sx={{ p: 6, textAlignment: 'center', borderRadius: '16px', border: '1px dashed #ccc', bgcolor: '#fafafa' }}>
-          <Typography variant="h6" align="center" color="text.secondary" sx={{ fontWeight: 'bold' }}>No components match criteria</Typography>
+        <Paper elevation={0} sx={{
+          p: { xs: 4, sm: 6 },
+          textAlign: 'center',
+          borderRadius: '16px',
+          border: '1px dashed #ccc',
+          bgcolor: '#fafafa',
+        }}>
+          <Typography variant="h6" align="center" color="text.secondary" sx={{
+            fontWeight: 'bold',
+            fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' },
+          }}>
+            No components match criteria
+          </Typography>
         </Paper>
       ) : (
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
           {filteredProducts.map((item) => {
             const isFeatured = item.is_featured === true;
             return (
-              <Grid item xs={12} sm={6} lg={4} key={item.id}>
-                <Card 
-                  elevation={0} 
-                  sx={{ 
-                    borderRadius: '16px', border: '1px solid #eaeaea', display: 'flex', flexDirection: 'column', height: '100%', 
-                    backgroundColor: '#ffffff', overflow: 'hidden', transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 12px 30px rgba(0,0,0,0.08)' }
+              <Grid item xs={12} sm={6} md={4} xl={3} key={item.id}>
+                <Card
+                  elevation={0}
+                  sx={{
+                    borderRadius: '16px',
+                    border: '1px solid #eaeaea',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    backgroundColor: '#ffffff',
+                    overflow: 'hidden',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-6px)',
+                      boxShadow: '0 12px 30px rgba(0,0,0,0.08)',
+                    },
                   }}
                 >
-                  <Box sx={{ position: 'relative', pt: '75%', bgcolor: '#f7f7f7', overflow: 'hidden', cursor: 'pointer' }} onClick={() => navigate(`/product/${item.id}`)}>
-                    <CardMedia component="img" image={getOptimizedThumbnail(item.photos)} alt={item.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <Chip label={item.condition_display || item.condition} color={item.condition === 'NEW' ? 'success' : 'warning'} size="small" sx={{ position: 'absolute', top: 12, left: 12, fontWeight: '800', fontSize: '11px', borderRadius: '6px' }} />
-                    
+                  <Box sx={{
+                    position: 'relative',
+                    paddingTop: { xs: '75%', sm: '65%', md: '56.25%' },
+                    bgcolor: '#f7f7f7',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                  }} onClick={() => navigate(`/product/${item.id}`)}>
+                    <CardMedia
+                      component="img"
+                      image={getOptimizedThumbnail(item.photos)}
+                      alt={item.title}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                    <Chip
+                      label={item.condition_display || item.condition}
+                      color={item.condition === 'NEW' ? 'success' : 'warning'}
+                      size="small"
+                      sx={{
+                        position: 'absolute',
+                        top: 12,
+                        left: 12,
+                        fontWeight: '800',
+                        fontSize: { xs: '10px', sm: '11px' },
+                        borderRadius: '6px',
+                      }}
+                    />
                     {isFeatured && (
-                      <Chip 
-                        icon={<VerifiedIcon style={{ color: '#fff', fontSize: '13px' }} />} 
-                        label="FEATURED" 
-                        color="success" 
-                        size="small" 
-                        sx={{ position: 'absolute', top: 12, right: 12, fontWeight: '900', fontSize: '10px', px: 0.5, borderRadius: '6px' }} 
+                      <Chip
+                        icon={<VerifiedIcon style={{ color: '#fff', fontSize: '13px' }} />}
+                        label="FEATURED"
+                        color="success"
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: 12,
+                          right: 12,
+                          fontWeight: '900',
+                          fontSize: { xs: '9px', sm: '10px' },
+                          px: 0.5,
+                          borderRadius: '6px',
+                        }}
                       />
                     )}
                   </Box>
 
-                  <CardContent sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, flexGrow: 1 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: '800', color: '#111', lineHeight: 1.4, height: '2.6em', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                  <CardContent sx={{
+                    p: { xs: 1.5, sm: 2 },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
+                    flexGrow: 1,
+                  }}>
+                    <Typography variant="subtitle1" sx={{
+                      fontWeight: '800',
+                      color: '#111',
+                      lineHeight: 1.4,
+                      height: '2.6em',
+                      overflow: 'hidden',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                    }}>
                       {item.title}
                     </Typography>
 
-                    <Typography variant="h6" sx={{ fontWeight: '900', color: '#2e7d32', mt: 0.5 }}>
+                    <Typography variant="h6" sx={{
+                      fontWeight: '900',
+                      color: '#2e7d32',
+                      mt: 0.5,
+                      fontSize: { xs: '1rem', sm: '1.1rem', md: '1.3rem' },
+                    }}>
                       UGX {Number(item.price).toLocaleString()}
                     </Typography>
 
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, mt: 'auto', pt: 1 }}>
+                    <Box sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 0.8,
+                      mt: 'auto',
+                      pt: 1,
+                    }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
                         <LocationOnIcon sx={{ fontSize: '16px', color: '#d32f2f' }} />
-                        <Typography variant="caption" sx={{ fontWeight: '600' }}>
+                        <Typography variant="caption" sx={{
+                          fontWeight: '600',
+                          fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                        }}>
                           {item.location_name || item.location_code || 'No location'}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
                         <InventoryIcon sx={{ fontSize: '16px' }} />
-                        <Typography variant="caption" sx={{ fontWeight: '600' }}>
+                        <Typography variant="caption" sx={{
+                          fontWeight: '600',
+                          fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                        }}>
                           Stock: <strong>{item.stock_count} units</strong>
                         </Typography>
                       </Box>
                       {item.category_name && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
-                          <Typography variant="caption" sx={{ fontWeight: '600' }}>
+                          <Typography variant="caption" sx={{
+                            fontWeight: '600',
+                            fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                          }}>
                             Category: <strong>{item.category_name}</strong>
                           </Typography>
                         </Box>
@@ -289,35 +440,60 @@ export default function GalleryView({ selectedCategory }) {
                     </Box>
                   </CardContent>
 
-                  <Box sx={{ px: 2, pb: 2, pt: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Button 
-                      variant="contained" color="success" size="small" fullWidth onClick={() => navigate(`/product/${item.id}`)} endIcon={<DoubleArrowIcon />} 
-                      sx={{ fontWeight: 'bold', borderRadius: '8px', textTransform: 'none', py: 1 }}
+                  <Box sx={{
+                    px: { xs: 1.5, sm: 2 },
+                    pb: { xs: 1.5, sm: 2 },
+                    pt: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
+                  }}>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      size="small"
+                      fullWidth
+                      onClick={() => navigate(`/product/${item.id}`)}
+                      endIcon={<DoubleArrowIcon />}
+                      sx={{
+                        fontWeight: 'bold',
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        py: { xs: 0.8, sm: 1 },
+                        fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
+                      }}
                     >
                       View Specifications Sheet
                     </Button>
 
-                    {/* ─── PROMOTION BUTTON: Only show if NOT featured ── */}
                     {!isFeatured ? (
-                      <Button 
-                        variant="outlined" color="error" size="small" fullWidth startIcon={<FlashOnIcon />}
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        fullWidth
+                        startIcon={<FlashOnIcon />}
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate('/payment', { 
-                            state: { 
-                              targetProductId: item.id, 
-                              promoAmount: promoFee, 
-                              itemTitle: item.title 
-                            } 
+                          navigate('/payment', {
+                            state: {
+                              targetProductId: item.id,
+                              promoAmount: promoFee,
+                              itemTitle: item.title
+                            }
                           });
                         }}
-                        sx={{ 
-                          fontWeight: '800', 
-                          borderRadius: '8px', 
-                          textTransform: 'none', 
-                          py: 0.8, 
-                          borderWidth: '1.5px', 
-                          '&:hover': { borderWidth: '1.5px', bgcolor: 'rgba(211,47,47,0.03)' },
+                        sx={{
+                          fontWeight: '800',
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          py: { xs: 0.7, sm: 0.8 },
+                          fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                          borderWidth: '1.5px',
+                          '&:hover': {
+                            borderWidth: '1.5px',
+                            bgcolor: 'rgba(211,47,47,0.03)',
+                          },
                           animation: 'pulse 2s infinite',
                           '@keyframes pulse': {
                             '0%': { opacity: 1 },
@@ -330,18 +506,19 @@ export default function GalleryView({ selectedCategory }) {
                         Boost Listing via Mobile Money
                       </Button>
                     ) : (
-                      <Button 
-                        variant="contained" 
-                        color="success" 
-                        size="small" 
-                        fullWidth 
+                      <Button
+                        variant="contained"
+                        color="success"
+                        size="small"
+                        fullWidth
                         disabled
                         startIcon={<VerifiedIcon />}
-                        sx={{ 
-                          fontWeight: '800', 
-                          borderRadius: '8px', 
-                          textTransform: 'none', 
-                          py: 0.8,
+                        sx={{
+                          fontWeight: '800',
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          py: { xs: 0.7, sm: 0.8 },
+                          fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
                           opacity: 0.8,
                           bgcolor: '#e8f5e9',
                           color: '#2e7d32',
