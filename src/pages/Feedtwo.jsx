@@ -3,15 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Grid, Typography, Card, CardContent, CardMedia,
   Chip, CircularProgress, Alert, TextField, MenuItem,
-  Slider, InputAdornment, Paper, Button, useMediaQuery, useTheme
+  Slider, InputAdornment, Paper, Button, IconButton,
+  Rating, useMediaQuery, useTheme
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
-import DoubleArrowIcon from '@mui/icons-material/DoubleArrow';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import api from '../api';
 
 export default function GalleryView({ selectedCategory }) {
@@ -186,73 +187,32 @@ export default function GalleryView({ selectedCategory }) {
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FilterAltIcon color="success" />
-          <Typography variant="subtitle1" sx={{
-            fontWeight: '900',
-            color: '#111',
-            fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' },
-          }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#111', fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' } }}>
             Filter Items
           </Typography>
         </Box>
 
-        {/* Responsive Filter Grid: Stacks on mobile */}
         <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
           <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              size="small"
-              label="Search for anything..."
-              fullWidth
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
-              }}
-            />
+            <TextField size="small" label="Search for anything..." fullWidth value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }} />
           </Grid>
-
           <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              select
-              size="small"
-              label="Category"
-              fullWidth
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
+            <TextField select size="small" label="Category" fullWidth value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
               <MenuItem value="ALL">All Categories</MenuItem>
-              {categories.map(cat => (
-                <MenuItem key={cat.id} value={cat.slug}>{cat.name}</MenuItem>
-              ))}
+              {categories.map(cat => <MenuItem key={cat.id} value={cat.slug}>{cat.name}</MenuItem>)}
             </TextField>
           </Grid>
-
           <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              select
-              size="small"
-              label="Location"
-              fullWidth
-              value={locationFilter}
-              onChange={(e) => setLocationFilter(e.target.value)}
-            >
+            <TextField select size="small" label="Location" fullWidth value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)}>
               <MenuItem value="ALL">All Locations</MenuItem>
-              {locations.map(loc => (
-                <MenuItem key={loc.id} value={loc.code}>{loc.name}</MenuItem>
-              ))}
+              {locations.map(loc => <MenuItem key={loc.id} value={loc.code}>{loc.name}</MenuItem>)}
             </TextField>
           </Grid>
         </Grid>
 
         <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
           <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              size="small"
-              label="Condition"
-              fullWidth
-              value={conditionFilter}
-              onChange={(e) => setConditionFilter(e.target.value)}
-            >
+            <TextField select size="small" label="Condition" fullWidth value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)}>
               <MenuItem value="ALL">All Conditions</MenuItem>
               <MenuItem value="NEW">Brand New / Sealed</MenuItem>
               <MenuItem value="REFURB">Refurbished / Tested</MenuItem>
@@ -262,303 +222,162 @@ export default function GalleryView({ selectedCategory }) {
           </Grid>
           <Grid item xs={12} sm={6}>
             <Box sx={{ px: { xs: 0.5, sm: 1 } }}>
-              <Typography variant="caption" sx={{
-                fontWeight: '800',
-                color: '#444',
-                mb: 1,
-                display: 'block',
-                fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.85rem' },
-              }}>
+              <Typography variant="caption" sx={{ fontWeight: '800', color: '#444', mb: 1, display: 'block', fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.85rem' } }}>
                 Max Price: <strong style={{ color: '#2e7d32' }}>UGX {maxPrice.toLocaleString()}</strong>
               </Typography>
-              <Slider
-                value={maxPrice}
-                min={5000}
-                max={5000000}
-                step={5000}
-                onChange={(e, val) => setMaxPrice(val)}
-                color="success"
-                size="small"
-              />
+              <Slider value={maxPrice} min={5000} max={5000000} step={5000} onChange={(e, val) => setMaxPrice(val)} color="success" size="small" />
             </Box>
           </Grid>
         </Grid>
       </Paper>
 
-      {/* Product Cards - EXPLICIT GRID RESPONSIVENESS */}
+      {/* Product Cards - JUMIA STYLE GRID & FREEMIUM LOGIC */}
       {filteredProducts.length === 0 ? (
-        <Paper elevation={0} sx={{
-          p: { xs: 4, sm: 6 },
-          textAlign: 'center',
-          borderRadius: '16px',
-          border: '1px dashed #ccc',
-          bgcolor: '#fafafa',
-        }}>
-          <Typography variant="h6" align="center" color="text.secondary" sx={{
-            fontWeight: 'bold',
-            fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' },
-          }}>
+        <Paper elevation={0} sx={{ p: { xs: 4, sm: 6 }, textAlign: 'center', borderRadius: '16px', border: '1px dashed #ccc', bgcolor: '#fafafa' }}>
+          <Typography variant="h6" align="center" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' } }}>
             No products found
           </Typography>
         </Paper>
       ) : (
-        <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} alignItems="stretch">
+        // 2 on phone, 3 on tablet, 4 on small laptop, 5 on standard laptop, 6 on large desktop. Tight 1px gap.
+        <Grid container spacing={1} alignItems="stretch" columns={{ xs: 2, sm: 3, md: 4, lg: 5, xl: 6 }}>
           {filteredProducts.map((item) => {
             const isFeatured = item.is_featured === true;
+            const hasDiscount = item.original_price && parseFloat(item.original_price) > parseFloat(item.price);
+            const discountPercent = hasDiscount ? Math.round(((parseFloat(item.original_price) - parseFloat(item.price)) / parseFloat(item.original_price)) * 100) : 0;
+
             return (
-              // 1 Column on Mobile (xs), 2 on Tablet (sm), 3 on Laptop (md), 4 on Large Desktop (lg)
-              <Grid item xs={12} sm={6} md={4} lg={3} key={item.id} style={{ display: 'flex' }}>
+              <Grid item xs={1} sm={1} md={1} lg={1} xl={1} key={item.id} style={{ display: 'flex' }}>
                 <Card
                   elevation={0}
+                  onClick={() => navigate(`/product/${item.id}`)}
                   sx={{
                     width: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    borderRadius: '16px',
-                    border: '1px solid #eaeaea',
+                    borderRadius: '8px',
+                    // Border for Freemium: Featured items get a distinct orange border
+                    border: isFeatured ? '2px solid #f57c00' : '1px solid #eaeaea',
                     backgroundColor: '#ffffff',
                     overflow: 'hidden',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      transform: { xs: 'none', md: 'translateY(-6px)' },
-                      boxShadow: { xs: 'none', md: '0 12px 30px rgba(0,0,0,0.08)' },
-                    },
+                    cursor: 'pointer',
+                    transition: 'box-shadow 0.2s ease',
+                    '&:hover': { boxShadow: '0 6px 15px rgba(0,0,0,0.1)' },
                   }}
                 >
-                  {/* Image container */}
+                  {/* Image section */}
                   <Box sx={{
                     position: 'relative',
                     width: '100%',
-                    height: { xs: '200px', sm: '220px', md: 'auto' }, 
-                    paddingTop: { xs: '0', sm: '0', md: '56.25%' },
+                    height: { xs: '150px', sm: '180px', md: '200px' },
                     bgcolor: '#f7f7f7',
                     overflow: 'hidden',
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                    display: { xs: 'flex', md: 'block' },
-                    justifyContent: { xs: 'center', md: 'flex-start' },
-                    alignItems: { xs: 'center', md: 'flex-start' },
-                  }} onClick={() => navigate(`/product/${item.id}`)}>
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
                     <CardMedia
                       component="img"
                       image={getOptimizedThumbnail(item.photos)}
                       alt={item.title}
-                      style={{
-                        objectFit: isMobile ? 'contain' : 'cover',
-                        position: { xs: 'relative', md: 'absolute' },
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        maxWidth: '100%',
-                        maxHeight: '100%',
-                      }}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '8px' }}
                     />
-                    <Chip
-                      label={item.condition_display || item.condition}
-                      color={item.condition === 'NEW' ? 'success' : 'warning'}
-                      size="small"
-                      sx={{
-                        position: 'absolute',
-                        top: 12,
-                        left: 12,
-                        fontWeight: '800',
-                        fontSize: { xs: '10px', sm: '11px' },
-                        borderRadius: '6px',
-                        zIndex: 10,
-                      }}
-                    />
-                    {isFeatured && (
-                      <Chip
-                        icon={<VerifiedIcon style={{ color: '#fff', fontSize: '13px' }} />}
-                        label="FEATURED"
-                        color="success"
-                        size="small"
-                        sx={{
-                          position: 'absolute',
-                          top: 12,
-                          right: 12,
-                          fontWeight: '900',
-                          fontSize: { xs: '9px', sm: '10px' },
-                          px: 0.5,
-                          borderRadius: '6px',
-                          zIndex: 10,
-                        }}
-                      />
-                    )}
+                    
+                    {/* Freemium Badge (Top Left) */}
+                    <Box sx={{ position: 'absolute', top: 8, left: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {isFeatured && (
+                        <Chip label="SPONSORED" size="small" sx={{ bgcolor: '#f57c00', color: '#fff', fontWeight: 'bold', fontSize: '9px', borderRadius: '0 4px 4px 0', height: '18px' }} />
+                      )}
+                      {hasDiscount && (
+                        <Chip label={`-${discountPercent}%`} size="small" sx={{ bgcolor: '#d32f2f', color: '#fff', fontWeight: 'bold', fontSize: '9px', borderRadius: '0 4px 4px 0', height: '18px' }} />
+                      )}
+                    </Box>
+
+                    {/* Wishlist Heart */}
+                    <IconButton size="small" sx={{ position: 'absolute', top: 6, right: 6, bgcolor: 'rgba(255,255,255,0.85)', '&:hover': { bgcolor: '#fff' } }}>
+                      <FavoriteBorderIcon fontSize="small" sx={{ color: '#666' }} />
+                    </IconButton>
                   </Box>
 
-                  <CardContent sx={{
-                    p: { xs: 1.5, sm: 2 },
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                    flexGrow: 1,
-                    overflow: 'hidden',
-                  }}>
+                  <CardContent sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, overflow: 'hidden' }}>
+                    {/* Title */}
                     <Typography
-                      variant="subtitle1"
+                      variant="subtitle2"
                       title={item.title}
                       sx={{
-                        fontWeight: '800',
-                        color: '#111',
+                        fontWeight: '600',
+                        color: '#333',
                         lineHeight: 1.4,
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        wordBreak: 'break-word',
-                        fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                        minHeight: '38px', // Reserve space to align prices
+                        fontSize: { xs: '0.8rem', md: '0.9rem' },
                       }}
                     >
                       {item.title}
                     </Typography>
 
-                    <Typography variant="h6" sx={{
-                      fontWeight: '900',
-                      color: '#2e7d32',
-                      mt: 0.5,
-                      fontSize: { xs: '1rem', sm: '1.1rem', md: '1.3rem' },
-                    }}>
-                      UGX {Number(item.price).toLocaleString()}
-                    </Typography>
-
-                    <Box sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 0.8,
-                      mt: 'auto',
-                      pt: 1,
-                    }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
-                        <LocationOnIcon sx={{ fontSize: '16px', color: '#d32f2f' }} />
-                        <Typography variant="caption" sx={{
-                          fontWeight: '600',
-                          fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}>
-                          {item.location_name || item.location_code || 'No location'}
+                    {/* Price (Prominent Red) with OLD Price & Discount */}
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 1 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#d32f2f', fontSize: { xs: '0.9rem', md: '1rem' } }}>
+                        UGX {Number(item.price).toLocaleString()}
+                      </Typography>
+                      {hasDiscount && (
+                        <Typography variant="caption" sx={{ textDecoration: 'line-through', color: '#999', fontSize: '0.7rem' }}>
+                          UGX {Number(item.original_price).toLocaleString()}
                         </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
-                        <InventoryIcon sx={{ fontSize: '16px' }} />
-                        <Typography variant="caption" sx={{
-                          fontWeight: '600',
-                          fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
-                        }}>
-                          Stock: <strong>{item.stock_count} units</strong>
-                        </Typography>
-                      </Box>
-                      {item.category_name && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#555' }}>
-                          <Typography variant="caption" sx={{
-                            fontWeight: '600',
-                            fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}>
-                            Category: <strong>{item.category_name}</strong>
-                          </Typography>
-                        </Box>
                       )}
+                    </Box>
+
+                    {/* Ratings if available in API */}
+                    {item.rating && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Rating value={item.rating} readOnly size="small" sx={{ fontSize: '12px' }} />
+                        <Typography variant="caption" sx={{ color: '#666', fontSize: '0.65rem' }}>
+                          ({item.rating_count || 0})
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {/* Location & Stock */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 'auto', pt: 0.5, color: '#777' }}>
+                      <LocationOnIcon sx={{ fontSize: '12px', color: '#d32f2f' }} />
+                      <Typography variant="caption" sx={{ fontSize: '0.65rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {item.location_name || item.location_code || 'N/A'}
+                      </Typography>
                     </Box>
                   </CardContent>
 
-                  <Box sx={{
-                    px: { xs: 1.5, sm: 2 },
-                    pb: { xs: 1.5, sm: 2 },
-                    pt: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                    flexShrink: 0,
-                  }}>
-                    <Button
-                      variant="contained"
-                      color="success"
-                      size="small"
-                      fullWidth
-                      onClick={() => navigate(`/product/${item.id}`)}
-                      endIcon={<DoubleArrowIcon />}
-                      sx={{
-                        fontWeight: 'bold',
-                        borderRadius: '8px',
-                        textTransform: 'none',
-                        py: { xs: 0.8, sm: 1 },
-                        fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
-                      }}
-                    >
-                      View Details
-                    </Button>
-
-                    {!isFeatured ? (
+                  {/* Freemium Button Area */}
+                  <Box sx={{ p: 1, pt: 0 }}>
+                    {isFeatured ? (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        fullWidth
+                        disabled
+                        startIcon={<VerifiedIcon style={{ fontSize: '14px' }} />}
+                        sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', '&.Mui-disabled': { bgcolor: '#e8f5e9', color: '#2e7d32', opacity: 0.8 } }}
+                      >
+                        Featured
+                      </Button>
+                    ) : (
                       <Button
                         variant="outlined"
                         color="error"
                         size="small"
                         fullWidth
-                        startIcon={<FlashOnIcon />}
+                        startIcon={<FlashOnIcon style={{ fontSize: '14px' }} />}
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate('/payment', {
-                            state: {
-                              targetProductId: item.id,
-                              promoAmount: promoFee,
-                              itemTitle: item.title
-                            }
-                          });
+                          navigate('/payment', { state: { targetProductId: item.id, promoAmount: promoFee, itemTitle: item.title } });
                         }}
-                        sx={{
-                          fontWeight: '800',
-                          borderRadius: '8px',
-                          textTransform: 'none',
-                          py: { xs: 0.7, sm: 0.8 },
-                          fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
-                          borderWidth: '1.5px',
-                          '&:hover': {
-                            borderWidth: '1.5px',
-                            bgcolor: 'rgba(211,47,47,0.03)',
-                          },
-                          animation: 'pulse 2s infinite',
-                          '@keyframes pulse': {
-                            '0%': { opacity: 1 },
-                            '50%': { opacity: 0.7 },
-                            '100%': { opacity: 1 },
-                          }
-                        }}
+                        sx={{ fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', borderWidth: '1.5px', '&:hover': { borderWidth: '1.5px' }, animation: 'pulse 2s infinite', '@keyframes pulse': { '0%': { opacity: 1 }, '50%': { opacity: 0.7 }, '100%': { opacity: 1 } } }}
                       >
-                        <FlashOnIcon sx={{ mr: 0.5, fontSize: '16px' }} />
-                        Boost this Item
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="contained"
-                        color="success"
-                        size="small"
-                        fullWidth
-                        disabled
-                        startIcon={<VerifiedIcon />}
-                        sx={{
-                          fontWeight: '800',
-                          borderRadius: '8px',
-                          textTransform: 'none',
-                          py: { xs: 0.7, sm: 0.8 },
-                          fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
-                          opacity: 0.8,
-                          bgcolor: '#e8f5e9',
-                          color: '#2e7d32',
-                          '&.Mui-disabled': {
-                            bgcolor: '#e8f5e9',
-                            color: '#2e7d32',
-                            opacity: 0.8,
-                          }
-                        }}
-                      >
-                        ✅ Already Featured
+                        Boost
                       </Button>
                     )}
                   </Box>
