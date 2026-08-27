@@ -16,8 +16,11 @@ import MoMoCheckoutModal from "./components/MoMoCheckoutModal";
 import { Stack, Box } from '@mui/material'
 
 function App() {
-  // Single source of truth for the mobile filter drawer
+  // State for mobile filter drawer
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  
+  // 🌟 NEW STATE FOR CATEGORY FILTERING
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
 
   return (
     <BrowserRouter>
@@ -29,12 +32,16 @@ function App() {
               <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
               
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ px: { xs: 1, md: 3 }, py: 2, flexGrow: 1 }}>
-                {/* Pass the props here so the drawer works */}
+                {/* Pass selectedCategory and onCategoryChange to Sidebar */}
                 <Sidebar 
+                  currentCategory={selectedCategory}
+                  onCategoryChange={(slug) => setSelectedCategory(slug)}
                   mobileOpen={mobileFilterOpen} 
                   onMobileClose={() => setMobileFilterOpen(false)} 
                 />
-                <GalleryView />
+                
+                {/* Pass selectedCategory down to GalleryView so it filters the products */}
+                <GalleryView selectedCategory={selectedCategory} />
               </Stack>
 
               <Footer />
@@ -42,7 +49,7 @@ function App() {
           }
         />
 
-        {/* Keep the rest of your routes... */}
+        {/* ... Keep the rest of your routes exactly as they are ... */}
         <Route path="/product/:id" element={
           <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#ffffff" }}>
             <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
