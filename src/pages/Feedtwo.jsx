@@ -95,15 +95,16 @@ export default function GalleryView({ selectedCategory }) {
     return result;
   }, [products, selectedCategory, searchQuery, categoryFilter, locationFilter, conditionFilter, maxPrice]);
 
-  // ─── UPDATED CLOUDINARY SMART CROP FUNCTION ───────────────────────────────
+  // ─── UPDATED CLOUDINARY SMART CROP FUNCTION (Maintains Aspect Ratio) ──────
   const getOptimizedThumbnail = (photosArray) => {
     if (!photosArray || !Array.isArray(photosArray) || photosArray.length === 0) return 'https://cloudinary.com';
     const firstPhotoObject = photosArray[0];
     const rawUrl = firstPhotoObject?.image_url || firstPhotoObject?.image;
     if (rawUrl && rawUrl.includes('cloudinary.com')) {
       const parts = rawUrl.split('/upload/');
+      // We use c_limit so it never crops, just resizes to a max width of 600
       if (parts.length === 2) {
-        return `${parts[0]}/upload/f_auto,q_auto,w_500,h_500,c_fill,g_auto/${parts[1]}`;
+        return `${parts[0]}/upload/f_auto,q_auto,w_600,c_limit/${parts[1]}`;
       }
     }
     return rawUrl || 'https://cloudinary.com';
@@ -123,7 +124,7 @@ export default function GalleryView({ selectedCategory }) {
   return (
     <Box sx={{ 
       flexGrow: 1, 
-      width: '100%', // CHANGED: Removed maxWidth to fill the entire screen
+      width: '100%', 
       px: { xs: 1, sm: 2, md: 2 }, 
       py: { xs: 1.5, sm: 2, md: 2 }, 
       display: 'flex', 
@@ -173,17 +174,17 @@ export default function GalleryView({ selectedCategory }) {
         </Grid>
       </Paper>
 
-      {/* PERFECT JUMIA STYLE GRID: Uses CSS Grid to auto-fill the width */}
+      {/* SHORT, UNIFORM, 4-COLUMN GRID WITH PERFECT ASPECT RATIO */}
       {filteredProducts.length === 0 ? (
         <Paper elevation={0} sx={{ p: { xs: 4, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px dashed #ccc', bgcolor: '#fafafa' }}>
           <Typography variant="h6" align="center" color="text.secondary" sx={{ fontWeight: 'bold' }}>No products found</Typography>
         </Paper>
       ) : (
+        // 2 on phones, 3 on tablets, 4 on laptops and up
         <Box sx={{ 
           display: 'grid', 
-          // 2 columns on mobile, 3 on tablet, 4 on small laptop, 6 on regular laptop, 7 on large desktop
-          gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(6, 1fr)', xl: 'repeat(7, 1fr)' },
-          gap: '12px' 
+          gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(4, 1fr)', xl: 'repeat(5, 1fr)' },
+          gap: '10px' 
         }}>
           {filteredProducts.map((item) => {
             const isFeatured = item.is_featured === true;
@@ -197,7 +198,7 @@ export default function GalleryView({ selectedCategory }) {
                 onClick={() => navigate(`/product/${item.id}`)}
                 sx={{
                   width: '100%',
-                  height: '100%', // Forces perfect uniform card heights
+                  height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
                   borderRadius: '8px',
@@ -211,14 +212,17 @@ export default function GalleryView({ selectedCategory }) {
                   '&:hover': { boxShadow: '0 6px 15px rgba(0,0,0,0.1)' },
                 }}
               >
-                {/* FIXED HEIGHT IMAGE CONTAINER */}
+                {/* 4:3 Aspect Ratio Box - Prevents cropping and makes cards shorter */}
                 <Box sx={{ 
                   position: 'relative', 
                   width: '100%', 
-                  height: { xs: '140px', sm: '160px', md: '180px', lg: '200px' }, 
+                  aspectRatio: '4 / 3', 
                   bgcolor: '#f7f7f7', 
                   overflow: 'hidden', 
-                  flexShrink: 0
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}>
                   <CardMedia
                     component="img"
@@ -226,8 +230,10 @@ export default function GalleryView({ selectedCategory }) {
                     alt={item.title}
                     loading="lazy"
                     style={{ 
-                      position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
-                      objectFit: 'cover'
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'contain', // Maintains original aspect ratio without cropping
+                      padding: '6px'
                     }}
                   />
                   
@@ -240,33 +246,33 @@ export default function GalleryView({ selectedCategory }) {
                   </IconButton>
                 </Box>
 
-                {/* FLEXIBLE CONTENT AREA */}
+                {/* TIGHT, WELL-CONTAINED TEXT AREA */}
                 <CardContent sx={{ 
-                  p: { xs: 1, sm: 1.5 }, 
+                  p: '10px', 
                   display: 'flex', 
                   flexDirection: 'column', 
                   flexGrow: 1, 
-                  gap: 0.75, 
+                  gap: '4px', 
                   overflow: 'hidden' 
                 }}>
                   <Typography variant="subtitle2" title={item.title} sx={{
                     fontWeight: '600', color: '#333', lineHeight: 1.3,
                     display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                     overflow: 'hidden', textOverflow: 'ellipsis',
-                    minHeight: '42px', 
-                    fontSize: { xs: '0.8rem', md: '0.85rem' }
+                    minHeight: '2.6em', // Ensures exactly 2 lines of space
+                    fontSize: '0.85rem'
                   }}>
                     {item.title}
                   </Typography>
 
                   <Box sx={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 0.5, minHeight: '24px' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#d32f2f', fontSize: { xs: '0.9rem', md: '1rem' } }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#d32f2f', fontSize: '1rem' }}>
                       UGX {Number(item.price).toLocaleString()}
                     </Typography>
                     {hasDiscount && <Typography variant="caption" sx={{ textDecoration: 'line-through', color: '#999', fontSize: '0.7rem' }}>UGX {Number(item.original_price).toLocaleString()}</Typography>}
                   </Box>
 
-                  <Box sx={{ minHeight: '20px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={{ minHeight: '18px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     {item.rating && (
                       <>
                         <Rating value={item.rating} readOnly size="small" sx={{ fontSize: '12px' }} />
@@ -275,21 +281,23 @@ export default function GalleryView({ selectedCategory }) {
                     )}
                   </Box>
 
+                  {/* Pushes location to the very bottom */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 'auto', pt: 1, color: '#777' }}>
                     <LocationOnIcon sx={{ fontSize: '12px', color: '#d32f2f' }} />
-                    <Typography variant="caption" sx={{ fontSize: '0.65rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <Typography variant="caption" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {item.location_name || item.location_code || 'N/A'}
                     </Typography>
                   </Box>
                 </CardContent>
 
-                <Box sx={{ p: { xs: 1, sm: 1.5 }, pt: 0 }}>
+                {/* SHORT, COMPACT BUTTONS */}
+                <Box sx={{ p: '10px', pt: '2px' }}>
                   {isFeatured ? (
-                    <Button variant="contained" size="small" fullWidth disabled startIcon={<VerifiedIcon style={{ fontSize: '14px' }} />} sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', '&.Mui-disabled': { bgcolor: '#e8f5e9', color: '#2e7d32', opacity: 0.8 } }}>
+                    <Button variant="contained" size="small" fullWidth disabled startIcon={<VerifiedIcon style={{ fontSize: '14px' }} />} sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontSize: '0.7rem', fontWeight: 'bold', textTransform: 'none', height: '30px', '&.Mui-disabled': { bgcolor: '#e8f5e9', color: '#2e7d32', opacity: 0.8 } }}>
                       Featured
                     </Button>
                   ) : (
-                    <Button variant="outlined" color="error" size="small" fullWidth startIcon={<FlashOnIcon style={{ fontSize: '14px' }} />} onClick={(e) => { e.stopPropagation(); navigate('/payment', { state: { targetProductId: item.id, promoAmount: promoFee, itemTitle: item.title } }); }} sx={{ fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', borderWidth: '1.5px', '&:hover': { borderWidth: '1.5px' }, animation: 'pulse 2s infinite', '@keyframes pulse': { '0%': { opacity: 1 }, '50%': { opacity: 0.7 }, '100%': { opacity: 1 } } }}>
+                    <Button variant="outlined" color="error" size="small" fullWidth startIcon={<FlashOnIcon style={{ fontSize: '14px' }} />} onClick={(e) => { e.stopPropagation(); navigate('/payment', { state: { targetProductId: item.id, promoAmount: promoFee, itemTitle: item.title } }); }} sx={{ fontSize: '0.7rem', fontWeight: 'bold', textTransform: 'none', height: '30px', borderWidth: '1.5px', '&:hover': { borderWidth: '1.5px' }, animation: 'pulse 2s infinite', '@keyframes pulse': { '0%': { opacity: 1 }, '50%': { opacity: 0.7 }, '100%': { opacity: 1 } } }}>
                       Boost
                     </Button>
                   )}
