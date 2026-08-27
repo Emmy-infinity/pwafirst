@@ -233,27 +233,29 @@ const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
     );
   };
 
-  return (
-    <Box sx={{ width: isMobile ? 0 : 280, minWidth: isMobile ? 0 : 280, height: '100%' }}>
-      {isMobile ? (
-        <>
-          <Fab 
-            color="primary" 
-            size="small" 
-            onClick={() => setMobileOpen(true)} 
-            sx={{ position: 'fixed', top: 80, left: 12, zIndex: 1000, boxShadow: 3 }}
-          >
-            <FilterListIcon />
-          </Fab>
-          <Drawer anchor="left" open={mobileOpen} onClose={() => setMobileOpen(false)}>
-            <Box sx={{ width: 280 }}>{renderSidebarContent()}</Box>
-          </Drawer>
-        </>
-      ) : (
-        renderSidebarContent()
-      )}
-    </Box>
-  );
+  // 🌟 FIXED RETURN LOGIC:
+  // On mobile, we only render the Fab and Drawer inside a Fragment.
+  // This completely removes the empty 0-width Box from the DOM, eliminating the blank side.
+  if (isMobile) {
+    return (
+      <>
+        <Fab 
+          color="primary" 
+          size="small" 
+          onClick={() => setMobileOpen(true)} 
+          sx={{ position: 'fixed', top: 80, left: 12, zIndex: 1000, boxShadow: 3 }}
+        >
+          <FilterListIcon />
+        </Fab>
+        <Drawer anchor="left" open={mobileOpen} onClose={() => setMobileOpen(false)}>
+          <Box sx={{ width: 280 }}>{renderSidebarContent()}</Box>
+        </Drawer>
+      </>
+    );
+  }
+
+  // On desktop, render the static sidebar.
+  return renderSidebarContent();
 };
 
 export default Sidebar;
