@@ -192,13 +192,28 @@ export default function GalleryView({ selectedCategory }) {
                     '&:hover': { boxShadow: '0 6px 15px rgba(0,0,0,0.1)' },
                   }}
                 >
-                  {/* PERFECT SQUARE IMAGE TRICK (Uniform image size) */}
-                  <Box sx={{ position: 'relative', width: '100%', paddingTop: '100%', bgcolor: '#f7f7f7', overflow: 'hidden', flexShrink: 0 }}>
+                  {/* FIXED HEIGHT IMAGE CONTAINER (Uniform size, no cropping) */}
+                  <Box sx={{ 
+                    position: 'relative', 
+                    width: '100%', 
+                    height: { xs: '130px', sm: '150px', md: '170px', lg: '190px' }, 
+                    bgcolor: '#f7f7f7', 
+                    overflow: 'hidden', 
+                    flexShrink: 0,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
                     <CardMedia
                       component="img"
                       image={getOptimizedThumbnail(item.photos)}
                       alt={item.title}
-                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'contain', // Shows the FULL image, preserving aspect ratio
+                        padding: '8px' 
+                      }}
                     />
                     
                     <Box sx={{ position: 'absolute', top: 8, left: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -210,7 +225,7 @@ export default function GalleryView({ selectedCategory }) {
                     </IconButton>
                   </Box>
 
-                  {/* FLEXIBLE CONTENT AREA (Uniform card size) */}
+                  {/* FLEXIBLE CONTENT AREA (Keeps cards aligned) */}
                   <CardContent sx={{ p: 1, display: 'flex', flexDirection: 'column', flexGrow: 1, gap: 0.5, overflow: 'hidden' }}>
                     <Typography variant="subtitle2" title={item.title} sx={{
                       fontWeight: '600', color: '#333', lineHeight: 1.3,
