@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Grid, Typography, Card, CardContent, CardMedia,
   Chip, CircularProgress, Alert, TextField, MenuItem,
-  Slider, InputAdornment, Paper, Button
+  Slider, InputAdornment, Paper, Button, useMediaQuery, useTheme
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -16,6 +16,9 @@ import api from '../api';
 
 export default function GalleryView({ selectedCategory }) {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -322,27 +325,39 @@ export default function GalleryView({ selectedCategory }) {
                     },
                   }}
                 >
-                  {/* Image container */}
+                  {/* Image container - Fixed height and perfectly centered */}
                   <Box sx={{
                     position: 'relative',
                     width: '100%',
-                    paddingTop: { xs: '75%', sm: '65%', md: '56.25%' },
+                    // Fixed height for mobile, aspect ratio for desktop
+                    height: { xs: '200px', sm: '220px', md: 'auto' }, 
+                    paddingTop: { xs: '0', sm: '0', md: '56.25%' }, // 16:9 aspect ratio for md and up
                     bgcolor: '#f7f7f7',
                     overflow: 'hidden',
                     cursor: 'pointer',
                     flexShrink: 0,
+                    // Flex centering for mobile
+                    display: { xs: 'flex', md: 'block' },
+                    justifyContent: { xs: 'center', md: 'flex-start' },
+                    alignItems: { xs: 'center', md: 'flex-start' },
                   }} onClick={() => navigate(`/product/${item.id}`)}>
+                    {/* Flex centering container for mobile */}
                     <CardMedia
                       component="img"
                       image={getOptimizedThumbnail(item.photos)}
                       alt={item.title}
                       style={{
-                        position: 'absolute',
+                        // Contain on mobile to show whole image, cover on desktop to fill box
+                        objectFit: isMobile ? 'contain' : 'cover',
+                        // Absolute positioning for desktop aspect ratio box
+                        position: { xs: 'relative', md: 'absolute' },
                         top: 0,
                         left: 0,
                         width: '100%',
                         height: '100%',
-                        objectFit: 'cover',
+                        // Remove absolute positioning for mobile flex centering
+                        maxWidth: '100%',
+                        maxHeight: '100%',
                       }}
                     />
                     <Chip
@@ -356,6 +371,7 @@ export default function GalleryView({ selectedCategory }) {
                         fontWeight: '800',
                         fontSize: { xs: '10px', sm: '11px' },
                         borderRadius: '6px',
+                        zIndex: 10,
                       }}
                     />
                     {isFeatured && (
@@ -372,6 +388,7 @@ export default function GalleryView({ selectedCategory }) {
                           fontSize: { xs: '9px', sm: '10px' },
                           px: 0.5,
                           borderRadius: '6px',
+                          zIndex: 10,
                         }}
                       />
                     )}
