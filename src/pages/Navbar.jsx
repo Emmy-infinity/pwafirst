@@ -1,4 +1,3 @@
-// src/pages/Navbar.jsx
 import React, { useState } from "react";
 import { 
   AppBar, 
@@ -11,6 +10,12 @@ import {
   MenuItem, 
   IconButton, 
   Divider,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -24,6 +29,7 @@ import {
 import LogoutIcon from '@mui/icons-material/Logout';
 import StoreIcon from '@mui/icons-material/Store';
 import LoginIcon from '@mui/icons-material/Login';
+import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import { useNavigate } from "react-router-dom";
 import api from "../api";
@@ -43,14 +49,8 @@ const StyledToolbar = styled(Toolbar)({
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  height: "70px",
-  padding: "0 24px"
-});
-
-const VendorActionBox = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "16px"
+  minHeight: "70px",
+  padding: "0 16px"
 });
 
 const Navbar = () => {
@@ -62,6 +62,9 @@ const Navbar = () => {
   // Menu state for avatar dropdown
   const [anchorEl, setAnchorEl] = useState(null);
   const isMenuOpen = Boolean(anchorEl);
+
+  // Mobile Drawer state
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Login modal state
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -76,10 +79,10 @@ const Navbar = () => {
   const handleSessionLogout = () => {
     localStorage.clear();
     handleMenuClose();
+    setMobileOpen(false);
     window.location.href = '/login'; 
   };
 
-  // Login handler
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginLoading(true);
@@ -92,7 +95,6 @@ const Navbar = () => {
       }
       localStorage.setItem("USERNAME", username);
       setLoginModalOpen(false);
-      // Reload to refresh navbar and app state
       window.location.reload();
     } catch (err) {
       setLoginError(
@@ -105,13 +107,53 @@ const Navbar = () => {
     }
   };
 
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
+
+  const drawerContent = (
+    <Box sx={{ width: 250, p: 2 }} role="presentation">
+      <List>
+        {activeToken ? (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => { setMobileOpen(false); navigate("/upload"); }}>
+                <ListItemIcon><StoreIcon /></ListItemIcon>
+                <ListItemText primary="List New Component" />
+              </ListItemButton>
+            </ListItem>
+            <Divider sx={{ my: 1 }} />
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleSessionLogout}>
+                <ListItemIcon><LogoutIcon /></ListItemIcon>
+                <ListItemText primary="Sign Out Securely" />
+              </ListItemButton>
+            </ListItem>
+          </>
+        ) : (
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => { setMobileOpen(false); setLoginModalOpen(true); }}>
+              <ListItemIcon><LoginIcon /></ListItemIcon>
+              <ListItemText primary="Trader Sign-In" />
+            </ListItemButton>
+          </ListItem>
+        )}
+      </List>
+    </Box>
+  );
+
   return (
     <>
       <StyledAppBar>
         <StyledToolbar>
-          
           {/* Logo / Brand */}
           <Box onClick={() => navigate("/")} sx={{ display: "flex", alignItems: "center", gap: 1.5, cursor: "pointer" }}>
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ display: { xs: 'block', md: 'none' }, mr: 1, color: '#444' }}
+            >
+              <MenuIcon />
+            </IconButton>
             <Box sx={{ width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <img 
                 src="src/images/logo.png" 
@@ -130,17 +172,19 @@ const Navbar = () => {
                 letterSpacing: "-0.5px", 
                 background: "linear-gradient(45deg, #1e88e5 30%, #f57c00 90%)",
                 WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent"
+                WebkitTextFillColor: "transparent",
+                display: { xs: 'none', sm: 'block' }
               }}
             >
               Northern Market
             </Typography>
           </Box>
 
-          <VendorActionBox>
+          {/* Desktop Actions */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: "center", gap: "16px" }}>
             {activeToken ? (
               <>
-                <Typography variant="body2" sx={{ display: { xs: "none", sm: "block" }, fontWeight: "600", color: "#444" }}>
+                <Typography variant="body2" sx={{ fontWeight: "600", color: "#444" }}>
                   Welcome, <strong>{traderUsername}</strong>
                 </Typography>
                 
@@ -156,18 +200,13 @@ const Navbar = () => {
                   onClose={handleMenuClose}
                   transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                   anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                  PaperProps={{
-                    elevation: 3,
-                    sx: { width: 220, mt: 1.5, borderRadius: "12px", border: "1px solid #f0f0f0" }
-                  }}
+                  PaperProps={{ elevation: 3, sx: { width: 220, mt: 1.5, borderRadius: "12px", border: "1px solid #f0f0f0" } }}
                 >
                   <MenuItem onClick={() => { handleMenuClose(); navigate("/upload"); }}>
                     <StoreIcon fontSize="small" sx={{ mr: 1.5, color: "#555" }} />
                     <Typography variant="body2" sx={{ fontWeight: "500" }}>List New Component</Typography>
                   </MenuItem>
-                  
                   <Divider sx={{ my: 1 }} />
-                  
                   <MenuItem onClick={handleSessionLogout} sx={{ color: "#d32f2f" }}>
                     <LogoutIcon fontSize="small" sx={{ mr: 1.5 }} />
                     <Typography variant="body2" sx={{ fontWeight: "600" }}>Sign Out Securely</Typography>
@@ -185,10 +224,27 @@ const Navbar = () => {
                 Trader Sign‑In
               </Button>
             )}
-          </VendorActionBox>
+          </Box>
 
+          {/* Mobile Action Button (Avatar/Login shortcut) */}
+          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+            {!activeToken ? (
+              <IconButton color="primary" onClick={() => setLoginModalOpen(true)}>
+                <LoginIcon />
+              </IconButton>
+            ) : (
+              <Avatar sx={{ width: 32, height: 32, bgcolor: "#f57c00", fontWeight: "bold", fontSize: "14px" }}>
+                {traderUsername.charAt(0).toUpperCase()}
+              </Avatar>
+            )}
+          </Box>
         </StyledToolbar>
       </StyledAppBar>
+
+      {/* Mobile Drawer */}
+      <Drawer anchor="left" open={mobileOpen} onClose={handleDrawerToggle}>
+        {drawerContent}
+      </Drawer>
 
       {/* Login Modal */}
       <Dialog 
@@ -196,9 +252,7 @@ const Navbar = () => {
         onClose={() => setLoginModalOpen(false)}
         maxWidth="xs"
         fullWidth
-        PaperProps={{
-          sx: { borderRadius: "16px", p: 1 }
-        }}
+        PaperProps={{ sx: { borderRadius: "16px", p: 1 } }}
       >
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Typography variant="h6" fontWeight="800">Welcome Back</Typography>
