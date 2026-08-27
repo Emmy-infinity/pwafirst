@@ -96,12 +96,22 @@ export default function GalleryView({ selectedCategory }) {
     return result;
   }, [products, selectedCategory, searchQuery, categoryFilter, locationFilter, conditionFilter, maxPrice]);
 
-  // Thumbnail helper
+  // ─── UPDATED CLOUDINARY SMART CROP FUNCTION ───────────────────────────────
   const getOptimizedThumbnail = (photosArray) => {
-    if (!photosArray || !Array.isArray(photosArray) || photosArray.length === 0) return 'https://cloudinary.com';
+    if (!photosArray || !Array.isArray(photosArray) || photosArray.length === 0) {
+      return 'https://cloudinary.com';
+    }
     const firstPhotoObject = photosArray[0];
     const rawUrl = firstPhotoObject?.image_url || firstPhotoObject?.image;
-    if (rawUrl && rawUrl.includes('cloudinary.com') && !rawUrl.includes('f_auto')) return rawUrl.replace('/upload/', '/upload/f_auto,q_auto,w_400,c_scale/');
+
+    if (rawUrl && rawUrl.includes('cloudinary.com')) {
+      // Safely remove old transformations (like w_800,c_scale) and force a perfect 500x500 square
+      // c_fill crops the image to fill the box, g_auto uses AI to keep the product centered
+      const parts = rawUrl.split('/upload/');
+      if (parts.length === 2) {
+        return `${parts[0]}/upload/f_auto,q_auto,w_500,h_500,c_fill,g_auto/${parts[1]}`;
+      }
+    }
     return rawUrl || 'https://cloudinary.com';
   };
 
@@ -192,27 +202,22 @@ export default function GalleryView({ selectedCategory }) {
                     '&:hover': { boxShadow: '0 6px 15px rgba(0,0,0,0.1)' },
                   }}
                 >
-                  {/* FIXED HEIGHT IMAGE CONTAINER (Uniform size, no cropping) */}
+                  {/* FIXED HEIGHT IMAGE CONTAINER - Now perfectly filled by Cloudinary's 500x500 crop */}
                   <Box sx={{ 
                     position: 'relative', 
                     width: '100%', 
                     height: { xs: '130px', sm: '150px', md: '170px', lg: '190px' }, 
                     bgcolor: '#f7f7f7', 
                     overflow: 'hidden', 
-                    flexShrink: 0,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
+                    flexShrink: 0
                   }}>
                     <CardMedia
                       component="img"
                       image={getOptimizedThumbnail(item.photos)}
                       alt={item.title}
                       style={{ 
-                        width: '100%', 
-                        height: '100%', 
-                        objectFit: 'contain', // Shows the FULL image, preserving aspect ratio
-                        padding: '8px' 
+                        position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
+                        objectFit: 'cover' // Fills the entire box perfectly with no gaps
                       }}
                     />
                     
