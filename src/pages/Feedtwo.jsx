@@ -20,20 +20,20 @@ export default function GalleryView({ selectedCategory }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ─── Dynamic data from backend ────────────────────────────────────
+  // Dynamic data from backend
   const [categories, setCategories] = useState([]);
   const [locations, setLocations] = useState([]);
   const [promoFee, setPromoFee] = useState(20000);
   const [configLoading, setConfigLoading] = useState(true);
 
-  // ─── Filters ──────────────────────────────────────────────────────
+  // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [conditionFilter, setConditionFilter] = useState('ALL');
   const [maxPrice, setMaxPrice] = useState(5000000);
 
-  // ─── Fetch products ──────────────────────────────────────────────
+  // Fetch products
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
@@ -63,7 +63,7 @@ export default function GalleryView({ selectedCategory }) {
     return () => { isMounted = false; };
   }, []);
 
-  // ─── Fetch categories, locations, and promotion fee ─────────────
+  // Fetch categories, locations, and promotion fee
   useEffect(() => {
     let isMounted = true;
     setConfigLoading(true);
@@ -98,7 +98,7 @@ export default function GalleryView({ selectedCategory }) {
     return () => { isMounted = false; };
   }, []);
 
-  // ─── Filter products ─────────────────────────────────────────────
+  // Filter products
   const filteredProducts = useMemo(() => {
     let result = products;
 
@@ -131,7 +131,7 @@ export default function GalleryView({ selectedCategory }) {
     return result;
   }, [products, selectedCategory, searchQuery, categoryFilter, locationFilter, conditionFilter, maxPrice]);
 
-  // ─── Thumbnail helper ────────────────────────────────────────────
+  // Thumbnail helper
   const getOptimizedThumbnail = (photosArray) => {
     if (!photosArray || !Array.isArray(photosArray) || photosArray.length === 0) {
       return 'https://cloudinary.com';
@@ -145,7 +145,7 @@ export default function GalleryView({ selectedCategory }) {
     return rawUrl || 'https://cloudinary.com';
   };
 
-  // ─── Loading states ──────────────────────────────────────────────
+  // Loading states
   if (loading || configLoading) return (
     <Box display="flex" flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center" minHeight="50vh">
       <CircularProgress color="success" size={40} />
@@ -171,7 +171,7 @@ export default function GalleryView({ selectedCategory }) {
       flexDirection: 'column',
       gap: { xs: 2, sm: 2.5, md: 3 },
     }}>
-      {/* 🎛️ FILTER CONTROLS */}
+      {/* Filter Controls */}
       <Paper variant="outlined" sx={{
         p: { xs: 1.5, sm: 2, md: 3 },
         borderRadius: '16px',
@@ -192,6 +192,7 @@ export default function GalleryView({ selectedCategory }) {
           </Typography>
         </Box>
 
+        {/* Responsive Filter Grid: Stacks on mobile */}
         <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
           <Grid item xs={12} sm={6} md={4}>
             <TextField
@@ -281,7 +282,7 @@ export default function GalleryView({ selectedCategory }) {
         </Grid>
       </Paper>
 
-      {/* 🏪 PRODUCT CARDS */}
+      {/* Product Cards */}
       {filteredProducts.length === 0 ? (
         <Paper elevation={0} sx={{
           p: { xs: 4, sm: 6 },
@@ -314,13 +315,14 @@ export default function GalleryView({ selectedCategory }) {
                     backgroundColor: '#ffffff',
                     overflow: 'hidden',
                     transition: 'all 0.2s ease',
+                    // Disable hover transform on touch devices
                     '&:hover': {
-                      transform: 'translateY(-6px)',
-                      boxShadow: '0 12px 30px rgba(0,0,0,0.08)',
+                      transform: { xs: 'none', md: 'translateY(-6px)' },
+                      boxShadow: { xs: 'none', md: '0 12px 30px rgba(0,0,0,0.08)' },
                     },
                   }}
                 >
-                  {/* 📸 Image container with responsive aspect ratio */}
+                  {/* Image container */}
                   <Box sx={{
                     position: 'relative',
                     width: '100%',
@@ -383,10 +385,9 @@ export default function GalleryView({ selectedCategory }) {
                     flexGrow: 1,
                     overflow: 'hidden',
                   }}>
-                    {/* 🔧 FIXED PRODUCT TITLE */}
                     <Typography
                       variant="subtitle1"
-                      title={item.title} // Full title on hover
+                      title={item.title}
                       sx={{
                         fontWeight: '800',
                         color: '#111',
