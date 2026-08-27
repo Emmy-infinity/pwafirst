@@ -18,17 +18,16 @@ import ProductDetail from "./pages/ProductDetail";
 import Footer from "./components/Footer"; 
 import MoMoCheckoutModal from "./components/MoMoCheckoutModal";
 
-import { Stack, Box, styled } from '@mui/material'
+import { Stack, Box } from '@mui/material'
 import './App.css'
 
 function App() {
-  // State for the mobile filter drawer (controlled by Navbar)
+  // Single source of truth for the mobile filter drawer
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Primary Public Marketplace Feed */}
         <Route
           path="/"
           element={
@@ -48,67 +47,18 @@ function App() {
             </Box>
           }
         />
-
-        {/* Public Detailed Hardware View */}
-        <Route 
-          path="/product/:id" 
-          element={
-            <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#ffffff" }}>
-              <PrimarySearchAppBar />
-              <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
-              <Box sx={{ flexGrow: 1, width: '100%' }}>
-                <ProductDetail />
-              </Box>
-              <Footer />
-            </Box>
-          } 
-        />
-
-        {/* Protected Listing Creation Form */}
-        <Route 
-          path="/upload" 
-          element={
-            <ProtectedRoute>
-              <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fbfbfb" }}>
-                <PrimarySearchAppBar />
-                <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
-                <Box sx={{ flexGrow: 1, py: 2 }}>
-                  <ImageUploader />
-                </Box>
-                <Footer />
-              </Box>
-            </ProtectedRoute>
-          } 
-        />
-
-        {/* Protected Mobile Money Payment */}
-        <Route 
-          path="/payment" 
-          element={
-            <ProtectedRoute>
-              <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fafafa" }}>
-                <PrimarySearchAppBar />
-                <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
-                <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 2, md: 4 } }}>
-                  <MoMoCheckoutModal />
-                </Box>
-                <Footer />
-              </Box>
-            </ProtectedRoute>
-          } 
-        />
-
-        {/* Other routes */}
-        <Route path="/chart" element={<PlotlyFromAPI />} />
-        <Route path="/rightbar" element={<Rightbar />} />
-        <Route path="/sidebar" element={<Sidebar />} />
-        <Route path="/landmark" element={<OfflineHandTracker />} />
-        <Route path="/search" element={<PrimarySearchAppBar />} />
         
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/logout" element={<Navigate to="/login" replace />} />
-        <Route path="*" element={<NotFound />} />
+        {/* ... (Keep the rest of your App.js routes exactly as they are) ... */}
+        <Route path="/product/:id" element={
+          <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#ffffff" }}>
+            <PrimarySearchAppBar />
+            <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
+            <Box sx={{ flexGrow: 1, width: '100%' }}><ProductDetail /></Box>
+            <Footer />
+          </Box>
+        } />
+        {/* Add onFilterClick to other Navbars too */}
+        {/* ... */}
       </Routes>
     </BrowserRouter>
   );
