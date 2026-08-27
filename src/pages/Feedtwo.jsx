@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Grid, Typography, Card, CardContent, CardMedia,
+  Box, Typography, Card, CardContent, CardMedia,
   Chip, CircularProgress, Alert, TextField, MenuItem,
   Slider, InputAdornment, Paper, Button, IconButton,
   Rating, useMediaQuery, useTheme
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import InventoryIcon from '@mui/icons-material/Inventory';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import VerifiedIcon from '@mui/icons-material/Verified';
@@ -122,7 +121,15 @@ export default function GalleryView({ selectedCategory }) {
   if (error) return <Box flexGrow={1} sx={{ p: 2 }}><Alert severity="error">{error}</Alert></Box>;
 
   return (
-    <Box sx={{ flexGrow: 1, width: '100%', maxWidth: '1800px', mx: 'auto', px: { xs: 1, sm: 2, md: 2 }, py: { xs: 1.5, sm: 2, md: 2 }, display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 2.5, md: 2 } }}>
+    <Box sx={{ 
+      flexGrow: 1, 
+      width: '100%', // CHANGED: Removed maxWidth to fill the entire screen
+      px: { xs: 1, sm: 2, md: 2 }, 
+      py: { xs: 1.5, sm: 2, md: 2 }, 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: { xs: 2, sm: 2.5, md: 2 } 
+    }}>
       
       {/* Compact Filter Bar */}
       <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 1.5 }, borderRadius: '8px', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: 1.5, boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
@@ -166,128 +173,131 @@ export default function GalleryView({ selectedCategory }) {
         </Grid>
       </Paper>
 
-      {/* JUMIA STYLE 6-COLUMN UNIFORM GRID */}
+      {/* PERFECT JUMIA STYLE GRID: Uses CSS Grid to auto-fill the width */}
       {filteredProducts.length === 0 ? (
         <Paper elevation={0} sx={{ p: { xs: 4, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px dashed #ccc', bgcolor: '#fafafa' }}>
           <Typography variant="h6" align="center" color="text.secondary" sx={{ fontWeight: 'bold' }}>No products found</Typography>
         </Paper>
       ) : (
-        <Grid container spacing={1} columns={{ xs: 2, sm: 3, md: 4, lg: 6, xl: 6 }} alignItems="stretch">
+        <Box sx={{ 
+          display: 'grid', 
+          // 2 columns on mobile, 3 on tablet, 4 on small laptop, 6 on regular laptop, 7 on large desktop
+          gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(6, 1fr)', xl: 'repeat(7, 1fr)' },
+          gap: '12px' 
+        }}>
           {filteredProducts.map((item) => {
             const isFeatured = item.is_featured === true;
             const hasDiscount = item.original_price && parseFloat(item.original_price) > parseFloat(item.price);
             const discountPercent = hasDiscount ? Math.round(((parseFloat(item.original_price) - parseFloat(item.price)) / parseFloat(item.original_price)) * 100) : 0;
 
             return (
-              <Grid item xs={1} sm={1} md={1} lg={1} xl={1} key={item.id} sx={{ display: 'flex', flexDirection: 'column' }}>
-                <Card
-                  elevation={0}
-                  onClick={() => navigate(`/product/${item.id}`)}
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: '8px',
-                    // FIX: Always use 2px border width, just change the color based on feature status
-                    border: '2px solid',
-                    borderColor: isFeatured ? '#f57c00' : '#eaeaea', 
-                    boxSizing: 'border-box', // Ensures border is included in the width/height
-                    backgroundColor: '#ffffff',
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    transition: 'box-shadow 0.2s ease',
-                    '&:hover': { boxShadow: '0 6px 15px rgba(0,0,0,0.1)' },
-                  }}
-                >
-                  {/* FIXED HEIGHT IMAGE CONTAINER */}
-                  <Box sx={{ 
-                    position: 'relative', 
-                    width: '100%', 
-                    height: { xs: '140px', sm: '160px', md: '180px', lg: '200px' }, 
-                    bgcolor: '#f7f7f7', 
-                    overflow: 'hidden', 
-                    flexShrink: 0
+              <Card
+                key={item.id}
+                elevation={0}
+                onClick={() => navigate(`/product/${item.id}`)}
+                sx={{
+                  width: '100%',
+                  height: '100%', // Forces perfect uniform card heights
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: '8px',
+                  border: '2px solid',
+                  borderColor: isFeatured ? '#f57c00' : '#eaeaea',
+                  boxSizing: 'border-box',
+                  backgroundColor: '#ffffff',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'box-shadow 0.2s ease',
+                  '&:hover': { boxShadow: '0 6px 15px rgba(0,0,0,0.1)' },
+                }}
+              >
+                {/* FIXED HEIGHT IMAGE CONTAINER */}
+                <Box sx={{ 
+                  position: 'relative', 
+                  width: '100%', 
+                  height: { xs: '140px', sm: '160px', md: '180px', lg: '200px' }, 
+                  bgcolor: '#f7f7f7', 
+                  overflow: 'hidden', 
+                  flexShrink: 0
+                }}>
+                  <CardMedia
+                    component="img"
+                    image={getOptimizedThumbnail(item.photos)}
+                    alt={item.title}
+                    loading="lazy"
+                    style={{ 
+                      position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
+                      objectFit: 'cover'
+                    }}
+                  />
+                  
+                  <Box sx={{ position: 'absolute', top: 8, left: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    {isFeatured && <Chip label="SPONSORED" size="small" sx={{ bgcolor: '#f57c00', color: '#fff', fontWeight: 'bold', fontSize: '9px', borderRadius: '0 4px 4px 0', height: '18px' }} />}
+                    {hasDiscount && <Chip label={`-${discountPercent}%`} size="small" sx={{ bgcolor: '#d32f2f', color: '#fff', fontWeight: 'bold', fontSize: '9px', borderRadius: '0 4px 4px 0', height: '18px' }} />}
+                  </Box>
+                  <IconButton size="small" sx={{ position: 'absolute', top: 6, right: 6, bgcolor: 'rgba(255,255,255,0.85)', '&:hover': { bgcolor: '#fff' } }}>
+                    <FavoriteBorderIcon fontSize="small" sx={{ color: '#666' }} />
+                  </IconButton>
+                </Box>
+
+                {/* FLEXIBLE CONTENT AREA */}
+                <CardContent sx={{ 
+                  p: { xs: 1, sm: 1.5 }, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  flexGrow: 1, 
+                  gap: 0.75, 
+                  overflow: 'hidden' 
+                }}>
+                  <Typography variant="subtitle2" title={item.title} sx={{
+                    fontWeight: '600', color: '#333', lineHeight: 1.3,
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden', textOverflow: 'ellipsis',
+                    minHeight: '42px', 
+                    fontSize: { xs: '0.8rem', md: '0.85rem' }
                   }}>
-                    <CardMedia
-                      component="img"
-                      image={getOptimizedThumbnail(item.photos)}
-                      alt={item.title}
-                      loading="lazy"
-                      style={{ 
-                        position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
-                        objectFit: 'cover'
-                      }}
-                    />
-                    
-                    <Box sx={{ position: 'absolute', top: 8, left: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      {isFeatured && <Chip label="SPONSORED" size="small" sx={{ bgcolor: '#f57c00', color: '#fff', fontWeight: 'bold', fontSize: '9px', borderRadius: '0 4px 4px 0', height: '18px' }} />}
-                      {hasDiscount && <Chip label={`-${discountPercent}%`} size="small" sx={{ bgcolor: '#d32f2f', color: '#fff', fontWeight: 'bold', fontSize: '9px', borderRadius: '0 4px 4px 0', height: '18px' }} />}
-                    </Box>
-                    <IconButton size="small" sx={{ position: 'absolute', top: 6, right: 6, bgcolor: 'rgba(255,255,255,0.85)', '&:hover': { bgcolor: '#fff' } }}>
-                      <FavoriteBorderIcon fontSize="small" sx={{ color: '#666' }} />
-                    </IconButton>
+                    {item.title}
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 0.5, minHeight: '24px' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#d32f2f', fontSize: { xs: '0.9rem', md: '1rem' } }}>
+                      UGX {Number(item.price).toLocaleString()}
+                    </Typography>
+                    {hasDiscount && <Typography variant="caption" sx={{ textDecoration: 'line-through', color: '#999', fontSize: '0.7rem' }}>UGX {Number(item.original_price).toLocaleString()}</Typography>}
                   </Box>
 
-                  {/* FLEXIBLE CONTENT AREA */}
-                  <CardContent sx={{ 
-                    p: { xs: 1, sm: 1.5 }, 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    flexGrow: 1, 
-                    gap: 0.75, 
-                    overflow: 'hidden' 
-                  }}>
-                    <Typography variant="subtitle2" title={item.title} sx={{
-                      fontWeight: '600', color: '#333', lineHeight: 1.3,
-                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden', textOverflow: 'ellipsis',
-                      minHeight: '42px', 
-                      fontSize: { xs: '0.8rem', md: '0.85rem' }
-                    }}>
-                      {item.title}
-                    </Typography>
-
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 0.5, minHeight: '24px' }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#d32f2f', fontSize: { xs: '0.9rem', md: '1rem' } }}>
-                        UGX {Number(item.price).toLocaleString()}
-                      </Typography>
-                      {hasDiscount && <Typography variant="caption" sx={{ textDecoration: 'line-through', color: '#999', fontSize: '0.7rem' }}>UGX {Number(item.original_price).toLocaleString()}</Typography>}
-                    </Box>
-
-                    <Box sx={{ minHeight: '20px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {item.rating && (
-                        <>
-                          <Rating value={item.rating} readOnly size="small" sx={{ fontSize: '12px' }} />
-                          <Typography variant="caption" sx={{ color: '#666', fontSize: '0.65rem' }}>({item.rating_count || 0})</Typography>
-                        </>
-                      )}
-                    </Box>
-
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 'auto', pt: 1, color: '#777' }}>
-                      <LocationOnIcon sx={{ fontSize: '12px', color: '#d32f2f' }} />
-                      <Typography variant="caption" sx={{ fontSize: '0.65rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {item.location_name || item.location_code || 'N/A'}
-                      </Typography>
-                    </Box>
-                  </CardContent>
-
-                  <Box sx={{ p: { xs: 1, sm: 1.5 }, pt: 0 }}>
-                    {isFeatured ? (
-                      <Button variant="contained" size="small" fullWidth disabled startIcon={<VerifiedIcon style={{ fontSize: '14px' }} />} sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', '&.Mui-disabled': { bgcolor: '#e8f5e9', color: '#2e7d32', opacity: 0.8 } }}>
-                        Featured
-                      </Button>
-                    ) : (
-                      <Button variant="outlined" color="error" size="small" fullWidth startIcon={<FlashOnIcon style={{ fontSize: '14px' }} />} onClick={(e) => { e.stopPropagation(); navigate('/payment', { state: { targetProductId: item.id, promoAmount: promoFee, itemTitle: item.title } }); }} sx={{ fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', borderWidth: '1.5px', '&:hover': { borderWidth: '1.5px' }, animation: 'pulse 2s infinite', '@keyframes pulse': { '0%': { opacity: 1 }, '50%': { opacity: 0.7 }, '100%': { opacity: 1 } } }}>
-                        Boost
-                      </Button>
+                  <Box sx={{ minHeight: '20px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {item.rating && (
+                      <>
+                        <Rating value={item.rating} readOnly size="small" sx={{ fontSize: '12px' }} />
+                        <Typography variant="caption" sx={{ color: '#666', fontSize: '0.65rem' }}>({item.rating_count || 0})</Typography>
+                      </>
                     )}
                   </Box>
-                </Card>
-              </Grid>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 'auto', pt: 1, color: '#777' }}>
+                    <LocationOnIcon sx={{ fontSize: '12px', color: '#d32f2f' }} />
+                    <Typography variant="caption" sx={{ fontSize: '0.65rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {item.location_name || item.location_code || 'N/A'}
+                    </Typography>
+                  </Box>
+                </CardContent>
+
+                <Box sx={{ p: { xs: 1, sm: 1.5 }, pt: 0 }}>
+                  {isFeatured ? (
+                    <Button variant="contained" size="small" fullWidth disabled startIcon={<VerifiedIcon style={{ fontSize: '14px' }} />} sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', '&.Mui-disabled': { bgcolor: '#e8f5e9', color: '#2e7d32', opacity: 0.8 } }}>
+                      Featured
+                    </Button>
+                  ) : (
+                    <Button variant="outlined" color="error" size="small" fullWidth startIcon={<FlashOnIcon style={{ fontSize: '14px' }} />} onClick={(e) => { e.stopPropagation(); navigate('/payment', { state: { targetProductId: item.id, promoAmount: promoFee, itemTitle: item.title } }); }} sx={{ fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', borderWidth: '1.5px', '&:hover': { borderWidth: '1.5px' }, animation: 'pulse 2s infinite', '@keyframes pulse': { '0%': { opacity: 1 }, '50%': { opacity: 0.7 }, '100%': { opacity: 1 } } }}>
+                      Boost
+                    </Button>
+                  )}
+                </Box>
+              </Card>
             );
           })}
-        </Grid>
+        </Box>
       )}
     </Box>
   );
