@@ -8,7 +8,6 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import EmailIcon from '@mui/icons-material/Email';
 import ShieldIcon from '@mui/icons-material/Shield';
 
-// 🌟 SOTA COMPLIANCE FOOTER WRAPPER (Premium deep neutral look to ground your layout grids)
 const FooterWrapper = styled(Box)(({ theme }) => ({
   backgroundColor: '#1a1d20',
   color: '#eaeaea',
@@ -33,12 +32,10 @@ const FooterLink = styled(Link)({
 });
 
 const Footer = () => {
-  // Modal tracking state parameters for privacy & legal text sheets
   const [legalModal, setLegalModal] = useState({ open: false, title: '', content: '' });
 
   const closeLegalModal = () => setLegalModal({ open: false, title: '', content: '' });
 
-  // Localized Compliance Documents Map Ledgers
   const launchPrivacyPolicy = () => {
     setLegalModal({
       open: true,
@@ -60,12 +57,12 @@ const Footer = () => {
                `3. DEFIANT MERCHANT BANS: Publishing scrap hardware falsified as sealed new inventory, or listing unauthorized communication networks will result in an immediate token session revocation.`
     });
   };
+
   return (
     <FooterWrapper component="footer">
       <Container maxWidth="lg">
-        <Grid container spacing={4} sx={{ mb: 4 }}>
-          
-          {/* COLUMN 1: PLATFORM PROFILE IDENTITY BRANDING */}
+        <Grid container spacing={4} sx={{ mb: 4, textAlign: { xs: 'center', sm: 'left' } }}>
+          {/* COLUMN 1 */}
           <Grid item xs={12} sm={4}>
             <Typography variant="h6" sx={{ fontWeight: '900', color: '#ffffff', mb: 2, letterSpacing: '-0.3px' }}>
               Northern Market
@@ -75,7 +72,7 @@ const Footer = () => {
             </Typography>
           </Grid>
 
-          {/* COLUMN 2: REGIONAL TAXONOMY INTERACTIVE LINKS */}
+          {/* COLUMN 2 */}
           <Grid item xs={12} sm={4}>
             <Typography variant="subtitle2" sx={{ fontWeight: '700', color: '#ffffff', mb: 2, textTransform: 'uppercase', fontSize: '12px' }}>
               Legal & Compliance
@@ -88,32 +85,29 @@ const Footer = () => {
             </FooterLink>
           </Grid>
 
-          {/* COLUMN 3: REGIONAL HUB LOGISTICS ADRESS HOTLINES */}
+          {/* COLUMN 3 */}
           <Grid item xs={12} sm={4}>
             <Typography variant="subtitle2" sx={{ fontWeight: '700', color: '#ffffff', mb: 2, textTransform: 'uppercase', fontSize: '12px' }}>
               Marketplace Hub Contacts
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, color: '#b0bec5' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, color: '#b0bec5', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
               <LocationOnIcon fontSize="small" sx={{ color: '#d32f2f' }} />
               <Typography variant="body2">Gulu City Main Hub, Uganda</Typography>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#b0bec5' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#b0bec5', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
               <EmailIcon fontSize="small" sx={{ color: '#1976d2' }} />
               <Typography variant="body2">support@northernmarket.co.ug</Typography>
             </Box>
           </Grid>
-
         </Grid>
 
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 3 }} />
 
-        {/* BOTTOM SECTION: COPYRIGHT STAMPS METRICS */}
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-          <Typography variant="caption" sx={{ color: '#777' }}>
+          <Typography variant="caption" sx={{ color: '#777', textAlign: { xs: 'center', sm: 'left' } }}>
             © {new Date().getFullYear()} Northern Market. Engineered natively for certified B2B wholesale electronics networks. All Rights Reserved.
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            {/* 🌟 FIXED: Replaced standard sx fill markers with string color properties to prevent compilation breaks */}
             <Chip 
               size="small" 
               icon={<ShieldIcon style={{ color: '#4caf50' }} />} 
@@ -122,10 +116,9 @@ const Footer = () => {
             />
           </Box>
         </Box>
-
       </Container>
 
-      {/* 🧾 DYNAMIC LEGAL DISCLOSURE SLIDEOUT MODAL SCREEN DRAWER */}
+      {/* Legal Modal */}
       <Dialog open={legalModal.open} onClose={closeLegalModal} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '12px', p: 1 } }}>
         <DialogTitle sx={{ fontWeight: 'bold', fontSize: '18px' }}>
           {legalModal.title}
@@ -141,7 +134,6 @@ const Footer = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
     </FooterWrapper>
   );
 };
