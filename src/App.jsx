@@ -25,7 +25,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Primary Public Marketplace Feed */}
+        {/* 1. PRIMARY PUBLIC MARKETPLACE SHOWCASE FEED */}
         <Route
           path="/"
           element={
@@ -33,8 +33,13 @@ function App() {
               <PrimarySearchAppBar />
               <Navbar />
               
-              {/* Responsive Stack: Flips to Column on Mobile */}
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" sx={{ px: { xs: 1, md: 3 }, py: 2, flexGrow: 1 }}>
+              {/* Responsive Stack: Stacks vertically on mobile, row on desktop */}
+              <Stack 
+                direction={{ xs: 'column', md: 'row' }} 
+                spacing={{ xs: 2, md: 4 }} 
+                justifyContent="space-between" 
+                sx={{ px: { xs: 1, md: 3 }, py: 2, flexGrow: 1 }}
+              >
                 <Sidebar />
                 <GalleryView />
               </Stack>
@@ -44,7 +49,7 @@ function App() {
           }
         />
 
-        {/* Public Detailed Hardware View */}
+        {/* 2. PUBLIC DETAILED HARDWARE CAROUSEL SHEETS */}
         <Route 
           path="/product/:id" 
           element={
@@ -59,7 +64,7 @@ function App() {
           } 
         />
 
-        {/* Protected Listing Creation Form */}
+        {/* 3. SECURED SELLING AND LISTING CREATION FORM */}
         <Route 
           path="/upload" 
           element={
@@ -76,7 +81,7 @@ function App() {
           } 
         />
 
-        {/* Protected Mobile Money Payment */}
+        {/* 4. SECURED MOBILE MONEY TRANSACTION CHECKOUT */}
         <Route 
           path="/payment" 
           element={
@@ -93,13 +98,14 @@ function App() {
           } 
         />
 
-        {/* Other routes unchanged */}
+        {/* 5. LOGISTICS GRAPHS AND TRACKING */}
         <Route path="/chart" element={<PlotlyFromAPI />} />
         <Route path="/rightbar" element={<Rightbar />} />
         <Route path="/sidebar" element={<Sidebar />} />
         <Route path="/landmark" element={<OfflineHandTracker />} />
         <Route path="/search" element={<PrimarySearchAppBar />} />
         
+        {/* 6. PUBLIC SESSIONS SECURITY */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/logout" element={<Navigate to="/login" replace />} />
