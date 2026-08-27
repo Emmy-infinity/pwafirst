@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import OfflineHandTracker from "./pages/Mediapipe";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
@@ -18,29 +18,29 @@ import ProductDetail from "./pages/ProductDetail";
 import Footer from "./components/Footer"; 
 import MoMoCheckoutModal from "./components/MoMoCheckoutModal";
 
-import { Stack, Box, Button, Container, styled } from '@mui/material'
+import { Stack, Box, styled } from '@mui/material'
 import './App.css'
 
 function App() {
+  // State for the mobile filter drawer (controlled by Navbar)
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
   return (
     <BrowserRouter>
       <Routes>
-        {/* 1. PRIMARY PUBLIC MARKETPLACE SHOWCASE FEED */}
+        {/* Primary Public Marketplace Feed */}
         <Route
           path="/"
           element={
             <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fbfbfb" }}>
               <PrimarySearchAppBar />
-              <Navbar />
+              <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
               
-              {/* Responsive Stack: Stacks vertically on mobile, row on desktop */}
-              <Stack 
-                direction={{ xs: 'column', md: 'row' }} 
-                spacing={{ xs: 2, md: 4 }} 
-                justifyContent="space-between" 
-                sx={{ px: { xs: 1, md: 3 }, py: 2, flexGrow: 1 }}
-              >
-                <Sidebar />
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" sx={{ px: { xs: 1, md: 3 }, py: 2, flexGrow: 1 }}>
+                <Sidebar 
+                  mobileOpen={mobileFilterOpen} 
+                  onMobileClose={() => setMobileFilterOpen(false)} 
+                />
                 <GalleryView />
               </Stack>
 
@@ -49,13 +49,13 @@ function App() {
           }
         />
 
-        {/* 2. PUBLIC DETAILED HARDWARE CAROUSEL SHEETS */}
+        {/* Public Detailed Hardware View */}
         <Route 
           path="/product/:id" 
           element={
             <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#ffffff" }}>
               <PrimarySearchAppBar />
-              <Navbar />
+              <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
               <Box sx={{ flexGrow: 1, width: '100%' }}>
                 <ProductDetail />
               </Box>
@@ -64,14 +64,14 @@ function App() {
           } 
         />
 
-        {/* 3. SECURED SELLING AND LISTING CREATION FORM */}
+        {/* Protected Listing Creation Form */}
         <Route 
           path="/upload" 
           element={
             <ProtectedRoute>
               <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fbfbfb" }}>
                 <PrimarySearchAppBar />
-                <Navbar />
+                <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
                 <Box sx={{ flexGrow: 1, py: 2 }}>
                   <ImageUploader />
                 </Box>
@@ -81,14 +81,14 @@ function App() {
           } 
         />
 
-        {/* 4. SECURED MOBILE MONEY TRANSACTION CHECKOUT */}
+        {/* Protected Mobile Money Payment */}
         <Route 
           path="/payment" 
           element={
             <ProtectedRoute>
               <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fafafa" }}>
                 <PrimarySearchAppBar />
-                <Navbar />
+                <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
                 <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 2, md: 4 } }}>
                   <MoMoCheckoutModal />
                 </Box>
@@ -98,14 +98,13 @@ function App() {
           } 
         />
 
-        {/* 5. LOGISTICS GRAPHS AND TRACKING */}
+        {/* Other routes */}
         <Route path="/chart" element={<PlotlyFromAPI />} />
         <Route path="/rightbar" element={<Rightbar />} />
         <Route path="/sidebar" element={<Sidebar />} />
         <Route path="/landmark" element={<OfflineHandTracker />} />
         <Route path="/search" element={<PrimarySearchAppBar />} />
         
-        {/* 6. PUBLIC SESSIONS SECURITY */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/logout" element={<Navigate to="/login" replace />} />
