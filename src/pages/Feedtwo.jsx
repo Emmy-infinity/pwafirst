@@ -185,11 +185,14 @@ export default function GalleryView({ selectedCategory }) {
                   onClick={() => navigate(`/product/${item.id}`)}
                   sx={{
                     width: '100%',
-                    height: '100%', // Forces all cards to be equal height
+                    height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     borderRadius: '8px',
-                    border: isFeatured ? '2px solid #f57c00' : '1px solid #eaeaea',
+                    // FIX: Always use 2px border width, just change the color based on feature status
+                    border: '2px solid',
+                    borderColor: isFeatured ? '#f57c00' : '#eaeaea', 
+                    boxSizing: 'border-box', // Ensures border is included in the width/height
                     backgroundColor: '#ffffff',
                     overflow: 'hidden',
                     cursor: 'pointer',
@@ -210,9 +213,10 @@ export default function GalleryView({ selectedCategory }) {
                       component="img"
                       image={getOptimizedThumbnail(item.photos)}
                       alt={item.title}
+                      loading="lazy"
                       style={{ 
                         position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
-                        objectFit: 'cover' // Fills the entire box perfectly
+                        objectFit: 'cover'
                       }}
                     />
                     
@@ -225,27 +229,25 @@ export default function GalleryView({ selectedCategory }) {
                     </IconButton>
                   </Box>
 
-                  {/* EQUAL PADDING AND EQUAL SIZED CONTENT AREA */}
+                  {/* FLEXIBLE CONTENT AREA */}
                   <CardContent sx={{ 
-                    p: { xs: 1, sm: 1.5 }, // Equal padding everywhere
+                    p: { xs: 1, sm: 1.5 }, 
                     display: 'flex', 
                     flexDirection: 'column', 
                     flexGrow: 1, 
                     gap: 0.75, 
                     overflow: 'hidden' 
                   }}>
-                    {/* Fixed height for Title (2 lines always) */}
                     <Typography variant="subtitle2" title={item.title} sx={{
                       fontWeight: '600', color: '#333', lineHeight: 1.3,
                       display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                       overflow: 'hidden', textOverflow: 'ellipsis',
-                      minHeight: '42px', // Ensures exactly 2 lines of space
+                      minHeight: '42px', 
                       fontSize: { xs: '0.8rem', md: '0.85rem' }
                     }}>
                       {item.title}
                     </Typography>
 
-                    {/* Fixed height for Price */}
                     <Box sx={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 0.5, minHeight: '24px' }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#d32f2f', fontSize: { xs: '0.9rem', md: '1rem' } }}>
                         UGX {Number(item.price).toLocaleString()}
@@ -253,7 +255,6 @@ export default function GalleryView({ selectedCategory }) {
                       {hasDiscount && <Typography variant="caption" sx={{ textDecoration: 'line-through', color: '#999', fontSize: '0.7rem' }}>UGX {Number(item.original_price).toLocaleString()}</Typography>}
                     </Box>
 
-                    {/* Fixed height for Rating (even if missing) */}
                     <Box sx={{ minHeight: '20px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       {item.rating && (
                         <>
@@ -263,7 +264,6 @@ export default function GalleryView({ selectedCategory }) {
                       )}
                     </Box>
 
-                    {/* mt: auto pushes this to the bottom, keeping all buttons aligned */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 'auto', pt: 1, color: '#777' }}>
                       <LocationOnIcon sx={{ fontSize: '12px', color: '#d32f2f' }} />
                       <Typography variant="caption" sx={{ fontSize: '0.65rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -272,7 +272,6 @@ export default function GalleryView({ selectedCategory }) {
                     </Box>
                   </CardContent>
 
-                  {/* EQUAL PADDING FOR BUTTON BOX */}
                   <Box sx={{ p: { xs: 1, sm: 1.5 }, pt: 0 }}>
                     {isFeatured ? (
                       <Button variant="contained" size="small" fullWidth disabled startIcon={<VerifiedIcon style={{ fontSize: '14px' }} />} sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', '&.Mui-disabled': { bgcolor: '#e8f5e9', color: '#2e7d32', opacity: 0.8 } }}>
