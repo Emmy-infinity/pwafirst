@@ -23,8 +23,6 @@ export default function GalleryView({ selectedCategory }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Dynamic data from backend
   const [categories, setCategories] = useState([]);
   const [locations, setLocations] = useState([]);
   const [promoFee, setPromoFee] = useState(20000);
@@ -41,29 +39,20 @@ export default function GalleryView({ selectedCategory }) {
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
-
     api.get('api/products/')
       .then(response => {
         if (isMounted) {
           const rawData = response.data;
-          if (Array.isArray(rawData)) {
-            setProducts(rawData);
-          } else if (rawData && Array.isArray(rawData.results)) {
-            setProducts(rawData.results);
-          } else {
-            setProducts([]);
-          }
+          if (Array.isArray(rawData)) setProducts(rawData);
+          else if (rawData && Array.isArray(rawData.results)) setProducts(rawData.results);
+          else setProducts([]);
           setLoading(false);
         }
       })
       .catch(err => {
         console.error("Storefront marketplace catalog grid sync failure:", err);
-        if (isMounted) {
-          setError("Could not load products. Please try again later.");
-          setLoading(false);
-        }
+        if (isMounted) { setError("Could not load products. Please try again later."); setLoading(false); }
       });
-
     return () => { isMounted = false; };
   }, []);
 
@@ -71,7 +60,6 @@ export default function GalleryView({ selectedCategory }) {
   useEffect(() => {
     let isMounted = true;
     setConfigLoading(true);
-
     const fetchConfig = async () => {
       try {
         const [feeRes, catRes, locRes] = await Promise.all([
@@ -79,7 +67,6 @@ export default function GalleryView({ selectedCategory }) {
           api.get('api/categories/'),
           api.get('api/locations/')
         ]);
-
         if (isMounted) {
           setPromoFee(feeRes.data.promotion_fee || 20000);
           setCategories(catRes.data || []);
@@ -87,69 +74,37 @@ export default function GalleryView({ selectedCategory }) {
           setConfigLoading(false);
         }
       } catch (err) {
-        console.error("Failed to fetch configuration data:", err);
-        if (isMounted) {
-          setPromoFee(20000);
-          setCategories([]);
-          setLocations([]);
-          setConfigLoading(false);
-        }
+        if (isMounted) { setPromoFee(20000); setCategories([]); setLocations([]); setConfigLoading(false); }
       }
     };
-
     fetchConfig();
-
     return () => { isMounted = false; };
   }, []);
 
   // Filter products
   const filteredProducts = useMemo(() => {
     let result = products;
-
-    if (selectedCategory && selectedCategory !== 'ALL') {
-      result = result.filter(p => String(p.category_slug || '').toUpperCase() === String(selectedCategory).toUpperCase());
-    }
-
+    if (selectedCategory && selectedCategory !== 'ALL') result = result.filter(p => String(p.category_slug || '').toUpperCase() === String(selectedCategory).toUpperCase());
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase();
-      result = result.filter(p =>
-        (p.title && p.title.toLowerCase().includes(query)) ||
-        (p.description && p.description.toLowerCase().includes(query))
-      );
+      result = result.filter(p => (p.title && p.title.toLowerCase().includes(query)) || (p.description && p.description.toLowerCase().includes(query)));
     }
-
-    if (categoryFilter !== 'ALL') {
-      result = result.filter(p => p.category_slug === categoryFilter);
-    }
-
-    if (locationFilter !== 'ALL') {
-      result = result.filter(p => p.location_code === locationFilter);
-    }
-
-    if (conditionFilter !== 'ALL') {
-      result = result.filter(p => p.condition === conditionFilter);
-    }
-
+    if (categoryFilter !== 'ALL') result = result.filter(p => p.category_slug === categoryFilter);
+    if (locationFilter !== 'ALL') result = result.filter(p => p.location_code === locationFilter);
+    if (conditionFilter !== 'ALL') result = result.filter(p => p.condition === conditionFilter);
     result = result.filter(p => (parseFloat(p.price) || 0) <= maxPrice);
-
     return result;
   }, [products, selectedCategory, searchQuery, categoryFilter, locationFilter, conditionFilter, maxPrice]);
 
   // Thumbnail helper
   const getOptimizedThumbnail = (photosArray) => {
-    if (!photosArray || !Array.isArray(photosArray) || photosArray.length === 0) {
-      return 'https://cloudinary.com';
-    }
+    if (!photosArray || !Array.isArray(photosArray) || photosArray.length === 0) return 'https://cloudinary.com';
     const firstPhotoObject = photosArray[0];
     const rawUrl = firstPhotoObject?.image_url || firstPhotoObject?.image;
-
-    if (rawUrl && rawUrl.includes('cloudinary.com') && !rawUrl.includes('f_auto')) {
-      return rawUrl.replace('/upload/', '/upload/f_auto,q_auto,w_400,c_scale/');
-    }
+    if (rawUrl && rawUrl.includes('cloudinary.com') && !rawUrl.includes('f_auto')) return rawUrl.replace('/upload/', '/upload/f_auto,q_auto,w_400,c_scale/');
     return rawUrl || 'https://cloudinary.com';
   };
 
-  // Loading states
   if (loading || configLoading) return (
     <Box display="flex" flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center" minHeight="50vh">
       <CircularProgress color="success" size={40} />
@@ -159,40 +114,18 @@ export default function GalleryView({ selectedCategory }) {
     </Box>
   );
 
-  if (error) return (
-    <Box flexGrow={1} sx={{ p: 2 }}><Alert severity="error">{error}</Alert></Box>
-  );
+  if (error) return <Box flexGrow={1} sx={{ p: 2 }}><Alert severity="error">{error}</Alert></Box>;
 
   return (
-    <Box sx={{
-      flexGrow: 1,
-      width: '100%',
-      maxWidth: '1600px',
-      mx: 'auto',
-      px: { xs: 1, sm: 2, md: 3 },
-      py: { xs: 1.5, sm: 2, md: 3 },
-      display: 'flex',
-      flexDirection: 'column',
-      gap: { xs: 2, sm: 2.5, md: 3 },
-    }}>
-      {/* Filter Controls */}
-      <Paper variant="outlined" sx={{
-        p: { xs: 1.5, sm: 2, md: 3 },
-        borderRadius: '16px',
-        backgroundColor: '#ffffff',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: { xs: 1.5, sm: 2, md: 2.5 },
-        boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
-      }}>
+    <Box sx={{ flexGrow: 1, width: '100%', maxWidth: '1800px', mx: 'auto', px: { xs: 1, sm: 2, md: 2 }, py: { xs: 1.5, sm: 2, md: 2 }, display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 2.5, md: 2 } }}>
+      
+      {/* Compact Filter Bar */}
+      <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 1.5 }, borderRadius: '8px', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: 1.5, boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FilterAltIcon color="success" />
-          <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#111', fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' } }}>
-            Filter Items
-          </Typography>
+          <FilterAltIcon color="success" sx={{ fontSize: '1.2rem' }} />
+          <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#111', fontSize: '1rem' }}>Filter Items</Typography>
         </Box>
-
-        <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
+        <Grid container spacing={1}>
           <Grid item xs={12} sm={6} md={4}>
             <TextField size="small" label="Search for anything..." fullWidth value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }} />
           </Grid>
@@ -208,10 +141,7 @@ export default function GalleryView({ selectedCategory }) {
               {locations.map(loc => <MenuItem key={loc.id} value={loc.code}>{loc.name}</MenuItem>)}
             </TextField>
           </Grid>
-        </Grid>
-
-        <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={6} md={6}>
             <TextField select size="small" label="Condition" fullWidth value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)}>
               <MenuItem value="ALL">All Conditions</MenuItem>
               <MenuItem value="NEW">Brand New / Sealed</MenuItem>
@@ -220,9 +150,9 @@ export default function GalleryView({ selectedCategory }) {
               <MenuItem value="SCRAP">Scrap / For Spares</MenuItem>
             </TextField>
           </Grid>
-          <Grid item xs={12} sm={6}>
-            <Box sx={{ px: { xs: 0.5, sm: 1 } }}>
-              <Typography variant="caption" sx={{ fontWeight: '800', color: '#444', mb: 1, display: 'block', fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.85rem' } }}>
+          <Grid item xs={12} sm={6} md={6}>
+            <Box sx={{ px: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: '800', color: '#444', fontSize: '0.7rem' }}>
                 Max Price: <strong style={{ color: '#2e7d32' }}>UGX {maxPrice.toLocaleString()}</strong>
               </Typography>
               <Slider value={maxPrice} min={5000} max={5000000} step={5000} onChange={(e, val) => setMaxPrice(val)} color="success" size="small" />
@@ -231,32 +161,29 @@ export default function GalleryView({ selectedCategory }) {
         </Grid>
       </Paper>
 
-      {/* Product Cards - JUMIA STYLE GRID & FREEMIUM LOGIC */}
+      {/* JUMIA STYLE 6-COLUMN UNIFORM GRID */}
       {filteredProducts.length === 0 ? (
-        <Paper elevation={0} sx={{ p: { xs: 4, sm: 6 }, textAlign: 'center', borderRadius: '16px', border: '1px dashed #ccc', bgcolor: '#fafafa' }}>
-          <Typography variant="h6" align="center" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' } }}>
-            No products found
-          </Typography>
+        <Paper elevation={0} sx={{ p: { xs: 4, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px dashed #ccc', bgcolor: '#fafafa' }}>
+          <Typography variant="h6" align="center" color="text.secondary" sx={{ fontWeight: 'bold' }}>No products found</Typography>
         </Paper>
       ) : (
-        // 2 on phone, 3 on tablet, 4 on small laptop, 5 on standard laptop, 6 on large desktop. Tight 1px gap.
-        <Grid container spacing={1} alignItems="stretch" columns={{ xs: 2, sm: 3, md: 4, lg: 5, xl: 6 }}>
+        <Grid container spacing={1} columns={{ xs: 2, sm: 3, md: 4, lg: 6, xl: 6 }} alignItems="stretch">
           {filteredProducts.map((item) => {
             const isFeatured = item.is_featured === true;
             const hasDiscount = item.original_price && parseFloat(item.original_price) > parseFloat(item.price);
             const discountPercent = hasDiscount ? Math.round(((parseFloat(item.original_price) - parseFloat(item.price)) / parseFloat(item.original_price)) * 100) : 0;
 
             return (
-              <Grid item xs={1} sm={1} md={1} lg={1} xl={1} key={item.id} style={{ display: 'flex' }}>
+              <Grid item xs={1} sm={1} md={1} lg={1} xl={1} key={item.id} sx={{ display: 'flex' }}>
                 <Card
                   elevation={0}
                   onClick={() => navigate(`/product/${item.id}`)}
                   sx={{
                     width: '100%',
+                    height: '100%', // Forces all cards to be equal height
                     display: 'flex',
                     flexDirection: 'column',
                     borderRadius: '8px',
-                    // Border for Freemium: Featured items get a distinct orange border
                     border: isFeatured ? '2px solid #f57c00' : '1px solid #eaeaea',
                     backgroundColor: '#ffffff',
                     overflow: 'hidden',
@@ -265,84 +192,50 @@ export default function GalleryView({ selectedCategory }) {
                     '&:hover': { boxShadow: '0 6px 15px rgba(0,0,0,0.1)' },
                   }}
                 >
-                  {/* Image section */}
-                  <Box sx={{
-                    position: 'relative',
-                    width: '100%',
-                    height: { xs: '150px', sm: '180px', md: '200px' },
-                    bgcolor: '#f7f7f7',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
+                  {/* PERFECT SQUARE IMAGE TRICK (Uniform image size) */}
+                  <Box sx={{ position: 'relative', width: '100%', paddingTop: '100%', bgcolor: '#f7f7f7', overflow: 'hidden', flexShrink: 0 }}>
                     <CardMedia
                       component="img"
                       image={getOptimizedThumbnail(item.photos)}
                       alt={item.title}
-                      style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '8px' }}
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                     
-                    {/* Freemium Badge (Top Left) */}
                     <Box sx={{ position: 'absolute', top: 8, left: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      {isFeatured && (
-                        <Chip label="SPONSORED" size="small" sx={{ bgcolor: '#f57c00', color: '#fff', fontWeight: 'bold', fontSize: '9px', borderRadius: '0 4px 4px 0', height: '18px' }} />
-                      )}
-                      {hasDiscount && (
-                        <Chip label={`-${discountPercent}%`} size="small" sx={{ bgcolor: '#d32f2f', color: '#fff', fontWeight: 'bold', fontSize: '9px', borderRadius: '0 4px 4px 0', height: '18px' }} />
-                      )}
+                      {isFeatured && <Chip label="SPONSORED" size="small" sx={{ bgcolor: '#f57c00', color: '#fff', fontWeight: 'bold', fontSize: '9px', borderRadius: '0 4px 4px 0', height: '18px' }} />}
+                      {hasDiscount && <Chip label={`-${discountPercent}%`} size="small" sx={{ bgcolor: '#d32f2f', color: '#fff', fontWeight: 'bold', fontSize: '9px', borderRadius: '0 4px 4px 0', height: '18px' }} />}
                     </Box>
-
-                    {/* Wishlist Heart */}
                     <IconButton size="small" sx={{ position: 'absolute', top: 6, right: 6, bgcolor: 'rgba(255,255,255,0.85)', '&:hover': { bgcolor: '#fff' } }}>
                       <FavoriteBorderIcon fontSize="small" sx={{ color: '#666' }} />
                     </IconButton>
                   </Box>
 
-                  <CardContent sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, overflow: 'hidden' }}>
-                    {/* Title */}
-                    <Typography
-                      variant="subtitle2"
-                      title={item.title}
-                      sx={{
-                        fontWeight: '600',
-                        color: '#333',
-                        lineHeight: 1.4,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        minHeight: '38px', // Reserve space to align prices
-                        fontSize: { xs: '0.8rem', md: '0.9rem' },
-                      }}
-                    >
+                  {/* FLEXIBLE CONTENT AREA (Uniform card size) */}
+                  <CardContent sx={{ p: 1, display: 'flex', flexDirection: 'column', flexGrow: 1, gap: 0.5, overflow: 'hidden' }}>
+                    <Typography variant="subtitle2" title={item.title} sx={{
+                      fontWeight: '600', color: '#333', lineHeight: 1.3,
+                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden', textOverflow: 'ellipsis',
+                      minHeight: '36px', fontSize: { xs: '0.8rem', md: '0.85rem' }
+                    }}>
                       {item.title}
                     </Typography>
 
-                    {/* Price (Prominent Red) with OLD Price & Discount */}
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 0.5 }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#d32f2f', fontSize: { xs: '0.9rem', md: '1rem' } }}>
                         UGX {Number(item.price).toLocaleString()}
                       </Typography>
-                      {hasDiscount && (
-                        <Typography variant="caption" sx={{ textDecoration: 'line-through', color: '#999', fontSize: '0.7rem' }}>
-                          UGX {Number(item.original_price).toLocaleString()}
-                        </Typography>
-                      )}
+                      {hasDiscount && <Typography variant="caption" sx={{ textDecoration: 'line-through', color: '#999', fontSize: '0.7rem' }}>UGX {Number(item.original_price).toLocaleString()}</Typography>}
                     </Box>
 
-                    {/* Ratings if available in API */}
                     {item.rating && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <Rating value={item.rating} readOnly size="small" sx={{ fontSize: '12px' }} />
-                        <Typography variant="caption" sx={{ color: '#666', fontSize: '0.65rem' }}>
-                          ({item.rating_count || 0})
-                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#666', fontSize: '0.65rem' }}>({item.rating_count || 0})</Typography>
                       </Box>
                     )}
 
-                    {/* Location & Stock */}
+                    {/* mt: auto pushes this to the bottom, keeping all buttons aligned */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 'auto', pt: 0.5, color: '#777' }}>
                       <LocationOnIcon sx={{ fontSize: '12px', color: '#d32f2f' }} />
                       <Typography variant="caption" sx={{ fontSize: '0.65rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -351,32 +244,13 @@ export default function GalleryView({ selectedCategory }) {
                     </Box>
                   </CardContent>
 
-                  {/* Freemium Button Area */}
                   <Box sx={{ p: 1, pt: 0 }}>
                     {isFeatured ? (
-                      <Button
-                        variant="contained"
-                        size="small"
-                        fullWidth
-                        disabled
-                        startIcon={<VerifiedIcon style={{ fontSize: '14px' }} />}
-                        sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', '&.Mui-disabled': { bgcolor: '#e8f5e9', color: '#2e7d32', opacity: 0.8 } }}
-                      >
+                      <Button variant="contained" size="small" fullWidth disabled startIcon={<VerifiedIcon style={{ fontSize: '14px' }} />} sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', '&.Mui-disabled': { bgcolor: '#e8f5e9', color: '#2e7d32', opacity: 0.8 } }}>
                         Featured
                       </Button>
                     ) : (
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        fullWidth
-                        startIcon={<FlashOnIcon style={{ fontSize: '14px' }} />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate('/payment', { state: { targetProductId: item.id, promoAmount: promoFee, itemTitle: item.title } });
-                        }}
-                        sx={{ fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', borderWidth: '1.5px', '&:hover': { borderWidth: '1.5px' }, animation: 'pulse 2s infinite', '@keyframes pulse': { '0%': { opacity: 1 }, '50%': { opacity: 0.7 }, '100%': { opacity: 1 } } }}
-                      >
+                      <Button variant="outlined" color="error" size="small" fullWidth startIcon={<FlashOnIcon style={{ fontSize: '14px' }} />} onClick={(e) => { e.stopPropagation(); navigate('/payment', { state: { targetProductId: item.id, promoAmount: promoFee, itemTitle: item.title } }); }} sx={{ fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'none', height: '30px', borderWidth: '1.5px', '&:hover': { borderWidth: '1.5px' }, animation: 'pulse 2s infinite', '@keyframes pulse': { '0%': { opacity: 1 }, '50%': { opacity: 0.7 }, '100%': { opacity: 1 } } }}>
                         Boost
                       </Button>
                     )}
