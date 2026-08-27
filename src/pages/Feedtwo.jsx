@@ -58,7 +58,7 @@ export default function GalleryView({ selectedCategory }) {
       .catch(err => {
         console.error("Storefront marketplace catalog grid sync failure:", err);
         if (isMounted) {
-          setError("Could not load products. Please try again later.");
+          setError("Could not parse the streamed real-time data payload from the backend container.");
           setLoading(false);
         }
       });
@@ -153,7 +153,7 @@ export default function GalleryView({ selectedCategory }) {
     <Box display="flex" flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center" minHeight="50vh">
       <CircularProgress color="success" size={40} />
       <Typography variant="body2" sx={{ mt: 2, color: '#666', fontWeight: '500' }}>
-        {loading ? 'Loading products...' : 'Loading options...'}
+        {loading ? 'Streaming wholesale component rows...' : 'Loading configuration...'}
       </Typography>
     </Box>
   );
@@ -191,7 +191,7 @@ export default function GalleryView({ selectedCategory }) {
             color: '#111',
             fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' },
           }}>
-            Filter Items
+            Refine Hardware Catalog Index
           </Typography>
         </Box>
 
@@ -200,7 +200,7 @@ export default function GalleryView({ selectedCategory }) {
           <Grid item xs={12} sm={6} md={4}>
             <TextField
               size="small"
-              label="Search for anything..."
+              label="Search parts or models..."
               fullWidth
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -298,7 +298,7 @@ export default function GalleryView({ selectedCategory }) {
             fontWeight: 'bold',
             fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' },
           }}>
-            No products found
+            No components match criteria
           </Typography>
         </Paper>
       ) : (
@@ -318,6 +318,7 @@ export default function GalleryView({ selectedCategory }) {
                     backgroundColor: '#ffffff',
                     overflow: 'hidden',
                     transition: 'all 0.2s ease',
+                    // Disable hover transform on touch devices
                     '&:hover': {
                       transform: { xs: 'none', md: 'translateY(-6px)' },
                       boxShadow: { xs: 'none', md: '0 12px 30px rgba(0,0,0,0.08)' },
@@ -328,27 +329,33 @@ export default function GalleryView({ selectedCategory }) {
                   <Box sx={{
                     position: 'relative',
                     width: '100%',
+                    // Fixed height for mobile, aspect ratio for desktop
                     height: { xs: '200px', sm: '220px', md: 'auto' }, 
-                    paddingTop: { xs: '0', sm: '0', md: '56.25%' },
+                    paddingTop: { xs: '0', sm: '0', md: '56.25%' }, // 16:9 aspect ratio for md and up
                     bgcolor: '#f7f7f7',
                     overflow: 'hidden',
                     cursor: 'pointer',
                     flexShrink: 0,
+                    // Flex centering for mobile
                     display: { xs: 'flex', md: 'block' },
                     justifyContent: { xs: 'center', md: 'flex-start' },
                     alignItems: { xs: 'center', md: 'flex-start' },
                   }} onClick={() => navigate(`/product/${item.id}`)}>
+                    {/* Flex centering container for mobile */}
                     <CardMedia
                       component="img"
                       image={getOptimizedThumbnail(item.photos)}
                       alt={item.title}
                       style={{
+                        // Contain on mobile to show whole image, cover on desktop to fill box
                         objectFit: isMobile ? 'contain' : 'cover',
+                        // Absolute positioning for desktop aspect ratio box
                         position: { xs: 'relative', md: 'absolute' },
                         top: 0,
                         left: 0,
                         width: '100%',
                         height: '100%',
+                        // Remove absolute positioning for mobile flex centering
                         maxWidth: '100%',
                         maxHeight: '100%',
                       }}
@@ -491,7 +498,7 @@ export default function GalleryView({ selectedCategory }) {
                         fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' },
                       }}
                     >
-                      View Details
+                      View Specifications Sheet
                     </Button>
 
                     {!isFeatured ? (
@@ -531,7 +538,7 @@ export default function GalleryView({ selectedCategory }) {
                         }}
                       >
                         <FlashOnIcon sx={{ mr: 0.5, fontSize: '16px' }} />
-                        Boost this Item
+                        Boost Listing via Mobile Money
                       </Button>
                     ) : (
                       <Button
