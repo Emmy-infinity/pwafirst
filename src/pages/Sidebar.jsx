@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, List, ListItem, ListItemButton, 
-  ListItemIcon, ListItemText, Paper, Divider, Chip, 
-  styled, CircularProgress, Button, Link, Drawer, Fab, useMediaQuery, useTheme 
+  ListItemIcon, ListItemText, Paper, Divider, 
+  styled, CircularProgress, Button, Link, Drawer
 } from '@mui/material';
 import CategoryIcon from '@mui/icons-material/Category';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import LockIcon from '@mui/icons-material/Lock';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import LaptopIcon from '@mui/icons-material/Laptop';
 import ElectricalServicesIcon from '@mui/icons-material/ElectricalServices';
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull';
@@ -16,7 +13,6 @@ import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import RouterIcon from '@mui/icons-material/Router';
 import CableIcon from '@mui/icons-material/Cable';
 import SellIcon from '@mui/icons-material/Sell';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -39,11 +35,8 @@ const TaxonomyCard = styled(Paper)({
   border: '1px solid #f0f0f0'
 });
 
-const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
+const Sidebar = ({ currentCategory = 'ALL', onCategoryChange, mobileOpen, onMobileClose }) => {
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [mobileOpen, setMobileOpen] = useState(false);
   
   const isAuthenticated = Boolean(localStorage.getItem("ACCESS_TOKEN"));
 
@@ -90,11 +83,10 @@ const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
     }
   };
 
+  // Close the drawer when a category is clicked
   const handleCategoryClick = (slug) => {
-    if (onCategoryChange) {
-      onCategoryChange(slug);
-    }
-    setMobileOpen(false);
+    if (onCategoryChange) onCategoryChange(slug);
+    if (onMobileClose) onMobileClose();
   };
 
   const renderSidebarContent = () => {
@@ -134,9 +126,7 @@ const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
           </Typography>
           {isAuthenticated ? (
             <Button
-              variant="contained"
-              size="large"
-              fullWidth
+              variant="contained" size="large" fullWidth
               onClick={() => navigate('/upload')}
               sx={{ bgcolor: '#fff', color: '#1b5e20', fontWeight: 'bold', borderRadius: '30px', textTransform: 'none', py: 1.5, '&:hover': { bgcolor: '#f5f5f5' } }}
             >
@@ -145,9 +135,7 @@ const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
           ) : (
             <>
               <Button
-                variant="contained"
-                size="large"
-                fullWidth
+                variant="contained" size="large" fullWidth
                 onClick={() => navigate('/login')}
                 sx={{ bgcolor: '#fff', color: '#1b5e20', fontWeight: 'bold', borderRadius: '30px', textTransform: 'none', py: 1.5, '&:hover': { bgcolor: '#f5f5f5' } }}
               >
@@ -233,29 +221,19 @@ const Sidebar = ({ currentCategory = 'ALL', onCategoryChange }) => {
     );
   };
 
-  // 🌟 FIXED RETURN LOGIC:
-  // On mobile, we only render the Fab and Drawer inside a Fragment.
-  // This completely removes the empty 0-width Box from the DOM, eliminating the blank side.
-  if (isMobile) {
-    return (
-      <>
-        <Fab 
-          color="primary" 
-          size="small" 
-          onClick={() => setMobileOpen(true)} 
-          sx={{ position: 'fixed', top: 80, left: 12, zIndex: 1000, boxShadow: 3 }}
-        >
-          <FilterListIcon />
-        </Fab>
-        <Drawer anchor="left" open={mobileOpen} onClose={() => setMobileOpen(false)}>
-          <Box sx={{ width: 280 }}>{renderSidebarContent()}</Box>
-        </Drawer>
-      </>
-    );
-  }
+  return (
+    <>
+      {/* Mobile Drawer (Controlled from Navbar) */}
+      <Drawer anchor="left" open={Boolean(mobileOpen)} onClose={onMobileClose}>
+        <Box sx={{ width: 280 }}>{renderSidebarContent()}</Box>
+      </Drawer>
 
-  // On desktop, render the static sidebar.
-  return renderSidebarContent();
+      {/* Desktop Sidebar (Hidden on mobile) */}
+      <Box sx={{ display: { xs: 'none', md: 'block' }, width: 280, minWidth: 280, height: '100%' }}>
+        {renderSidebarContent()}
+      </Box>
+    </>
+  );
 };
 
 export default Sidebar;
