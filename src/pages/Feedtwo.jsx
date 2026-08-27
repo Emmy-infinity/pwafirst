@@ -4,7 +4,8 @@ import {
   Box, Typography, Card, CardContent, CardMedia,
   Chip, CircularProgress, Alert, TextField, MenuItem,
   Slider, InputAdornment, Paper, Button, IconButton,
-  Rating, useMediaQuery, useTheme
+  Rating, useMediaQuery, useTheme,
+  Grid // <-- CRITICAL FIX: Added Grid back
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -102,7 +103,6 @@ export default function GalleryView({ selectedCategory }) {
     const rawUrl = firstPhotoObject?.image_url || firstPhotoObject?.image;
     if (rawUrl && rawUrl.includes('cloudinary.com')) {
       const parts = rawUrl.split('/upload/');
-      // We use c_limit so it never crops, just resizes to a max width of 600
       if (parts.length === 2) {
         return `${parts[0]}/upload/f_auto,q_auto,w_600,c_limit/${parts[1]}`;
       }
@@ -180,7 +180,6 @@ export default function GalleryView({ selectedCategory }) {
           <Typography variant="h6" align="center" color="text.secondary" sx={{ fontWeight: 'bold' }}>No products found</Typography>
         </Paper>
       ) : (
-        // 2 on phones, 3 on tablets, 4 on laptops and up
         <Box sx={{ 
           display: 'grid', 
           gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(4, 1fr)', xl: 'repeat(5, 1fr)' },
