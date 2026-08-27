@@ -21,30 +21,11 @@ import MoMoCheckoutModal from "./components/MoMoCheckoutModal";
 import { Stack, Box, Button, Container, styled } from '@mui/material'
 import './App.css'
 
-// Clean layout flexbox constructor mapping
-const Stacking = styled(Stack)({
-  flexDirection: 'row',
-  gap: '40px',
-  justifyContent: 'space-between'
-});
-
-// 🌟 RESTORED SESSION CLEANUP ENGINES: Wipes invalid keys to allow clean credentials inputs
-function Logout() {
-  localStorage.clear();
-  return <Navigate to="/login" replace />;
-}
-
-function RegisterAndLogout() {
-  localStorage.clear();
-  return <Register />;
-}
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* =====================================================================
-            🏪 1. PRIMARY PUBLIC MARKETPLACE SHOWCASE FEED (FREE TO VIEW)
-           ===================================================================== */}
+        {/* Primary Public Marketplace Feed */}
         <Route
           path="/"
           element={
@@ -52,8 +33,8 @@ function App() {
               <PrimarySearchAppBar />
               <Navbar />
               
-              {/* 🗲 FLAT PLATFORM MATRIX LAYOUT GRID CANVAS */}
-              <Stack direction="row" spacing={2} justifyContent="space-between" sx={{ px: { xs: 1, md: 3 }, py: 2, flexGrow: 1 }}>
+              {/* Responsive Stack: Flips to Column on Mobile */}
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" sx={{ px: { xs: 1, md: 3 }, py: 2, flexGrow: 1 }}>
                 <Sidebar />
                 <GalleryView />
               </Stack>
@@ -63,16 +44,14 @@ function App() {
           }
         />
 
-        {/* =====================================================================
-            🌟 2. PUBLIC DETAILED HARDWARE CAROUSEL SHEETS (FREE TO EXPLORE)
-           ===================================================================== */}
+        {/* Public Detailed Hardware View */}
         <Route 
           path="/product/:id" 
           element={
             <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#ffffff" }}>
               <PrimarySearchAppBar />
               <Navbar />
-              <Box sx={{ flexGrow: 1 }}>
+              <Box sx={{ flexGrow: 1, width: '100%' }}>
                 <ProductDetail />
               </Box>
               <Footer />
@@ -80,9 +59,7 @@ function App() {
           } 
         />
 
-        {/* =====================================================================
-            🗲 3. SECURED SELLING AND LISTING CREATION FORM GATEWAY (PROTECTED)
-           ===================================================================== */}
+        {/* Protected Listing Creation Form */}
         <Route 
           path="/upload" 
           element={
@@ -99,9 +76,7 @@ function App() {
           } 
         />
 
-        {/* =====================================================================
-            💳 4. SECURED MOBILE MONEY TRANSACTION CHECKOUT GATEWAY (PROTECTED)
-           ===================================================================== */}
+        {/* Protected Mobile Money Payment */}
         <Route 
           path="/payment" 
           element={
@@ -118,21 +93,16 @@ function App() {
           } 
         />
 
-        {/* =====================================================================
-            📝 5. LOGISTICS GRAPHS AND TRACKING EXTENSION ENDPOINTS
-           ===================================================================== */}
+        {/* Other routes unchanged */}
         <Route path="/chart" element={<PlotlyFromAPI />} />
         <Route path="/rightbar" element={<Rightbar />} />
         <Route path="/sidebar" element={<Sidebar />} />
         <Route path="/landmark" element={<OfflineHandTracker />} />
         <Route path="/search" element={<PrimarySearchAppBar />} />
         
-        {/* =====================================================================
-            🔐 6. PUBLIC SESSIONS SECURITY ACCESS ENGINES
-           ===================================================================== */}
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<RegisterAndLogout />} />
-        <Route path="/logout" element={<Logout />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/logout" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
