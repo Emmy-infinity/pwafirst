@@ -11,8 +11,7 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('🔥 Northern Market crashed:', error, errorInfo);
-    // You can send this to a logging service if you want
+    console.error('🔥 Northern Market UI Crash:', error, errorInfo);
   }
 
   render() {
@@ -29,11 +28,18 @@ class ErrorBoundary extends React.Component {
           background: '#fbfbfb',
           fontFamily: 'system-ui, sans-serif'
         }}>
-          <h1 style={{ color: '#2e7d32', fontSize: 'clamp(24px, 5vw, 48px)' }}>
+          <h1 style={{ 
+            color: '#2e7d32', 
+            fontSize: 'clamp(24px, 5vw, 48px)' 
+          }}>
             🛠️ Northern Market is rebooting
           </h1>
-          <p style={{ fontSize: 'clamp(16px, 2vw, 20px)', maxWidth: '500px', color: '#555' }}>
-            Our systems are recalibrating. Please refresh the page or clear your browser cache.
+          <p style={{ 
+            fontSize: 'clamp(16px, 2vw, 20px)', 
+            maxWidth: '500px', 
+            color: '#555' 
+          }}>
+            Our Gulu servers detected a hiccup. Hit the button below to refresh.
           </p>
           <button 
             onClick={() => window.location.reload()}
@@ -52,8 +58,12 @@ class ErrorBoundary extends React.Component {
           >
             🔄 Refresh Northern Market
           </button>
-          <p style={{ marginTop: '20px', fontSize: '14px', color: '#999' }}>
-            {this.state.error?.message || 'Unknown hiccup detected'}
+          <p style={{ 
+            marginTop: '20px', 
+            fontSize: '14px', 
+            color: '#999' 
+          }}>
+            {this.state.error?.message || 'No signal from the matrix'}
           </p>
         </div>
       );
