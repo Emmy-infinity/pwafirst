@@ -18,7 +18,6 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
-        screenshots: [ /* add your screenshots here */ ],
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
@@ -26,6 +25,10 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // 🔥 FIX 1 & 2: Destroy old caches and take over immediately
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff2}'],
         maximumFileSizeToCacheInBytes: 6000000,
         runtimeCaching: [
@@ -52,7 +55,12 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 5000,
     minify: 'terser',
-    terserOptions: { compress: { drop_console: true, drop_debugger: true } },
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
     sourcemap: false,
     target: 'es2020',
     rollupOptions: {
