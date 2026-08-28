@@ -3,17 +3,17 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import ErrorBoundary from './ErrorBoundary.jsx';
 
-// 🌟 PWA SERVICE WORKER - ISOLATED TO PREVENT CRASHES
+// 🔥 CRITICAL: PWA Service Worker – isolated to prevent crashes
 let updateSW = null;
 
 if ('serviceWorker' in navigator) {
   try {
-    // Dynamic import to prevent build-time crashes if the virtual module is missing
+    // Dynamic import prevents build failures if virtual module is missing
     import('virtual:pwa-register').then(({ registerSW }) => {
       updateSW = registerSW({
         onNeedRefresh() {
-          console.log('📡 New update streamed. Refreshing...');
-          // Auto-reload to kill the old cache
+          console.log('📡 New update streamed. Reloading...');
+          // 🔥 Force reload to kill old cache and load fresh assets
           window.location.reload();
         },
         onOfflineReady() {
@@ -21,14 +21,14 @@ if ('serviceWorker' in navigator) {
         },
       });
     }).catch((err) => {
-      console.warn('⚠️ PWA virtual module failed to load (build issue):', err);
+      console.warn('⚠️ PWA virtual module failed to load:', err);
     });
   } catch (err) {
     console.warn('⚠️ Service Worker registration skipped:', err);
   }
 }
 
-// 🔥 CRITICAL LOG: If you don't see this in the console, the build is broken.
+// 🔥 Log to confirm main.jsx executed
 console.log('🚀 Northern Market booting up...');
 
 const root = document.getElementById('root');
@@ -41,6 +41,6 @@ if (!root) {
       <ErrorBoundary>
         <App />
       </ErrorBoundary>
-    </React.StrictMode>,
+    </React.StrictMode>
   );
 }
