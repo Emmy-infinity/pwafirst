@@ -3,13 +3,13 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // 🔥 If your React build is served via Django's staticfiles, change this to '/static/'
   base: '/',
+
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      // 🔥 IMPORTANT: Explicitly tell it to generate a SW (default, but we enforce it)
-      strategies: 'generateSW',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
         name: 'Northern Market B2B Platform',
@@ -21,16 +21,30 @@ export default defineConfig({
         orientation: 'portrait',
         start_url: '/',
         icons: [
-          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+          { 
+            src: 'pwa-192x192.png', 
+            sizes: '192x192', 
+            type: 'image/png' 
+          },
+          { 
+            src: 'pwa-512x512.png', 
+            sizes: '512x512', 
+            type: 'image/png' 
+          },
+          { 
+            src: 'pwa-512x512.png', 
+            sizes: '512x512', 
+            type: 'image/png', 
+            purpose: 'any maskable' 
+          }
         ]
       },
       workbox: {
-        // 🔥 These 3 lines kill the old cache and prevent the blank screen
-        cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true,
+        // 🔥 CRITICAL FIX: These three lines prevent the "blank screen after update" issue
+        cleanupOutdatedCaches: true,   // Deletes old caches automatically
+        skipWaiting: true,             // New SW activates immediately
+        clientsClaim: true,            // New SW takes control instantly
+
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff2}'],
         maximumFileSizeToCacheInBytes: 6000000,
         runtimeCaching: [
@@ -39,7 +53,10 @@ export default defineConfig({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
-              expiration: { maxEntries: 50, maxAgeSeconds: 300 }
+              expiration: { 
+                maxEntries: 50, 
+                maxAgeSeconds: 300 
+              }
             }
           },
           {
@@ -47,13 +64,17 @@ export default defineConfig({
             handler: 'CacheFirst',
             options: {
               cacheName: 'image-cache',
-              expiration: { maxEntries: 100, maxAgeSeconds: 604800 }
+              expiration: { 
+                maxEntries: 100, 
+                maxAgeSeconds: 604800 
+              }
             }
           }
         ]
       }
     })
   ],
+
   build: {
     chunkSizeWarningLimit: 5000,
     minify: 'terser',
