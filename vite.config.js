@@ -8,6 +8,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // 🔥 IMPORTANT: Explicitly tell it to generate a SW (default, but we enforce it)
+      strategies: 'generateSW',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
         name: 'Northern Market B2B Platform',
@@ -25,7 +27,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // 🔥 FIX 1 & 2: Destroy old caches and take over immediately
+        // 🔥 These 3 lines kill the old cache and prevent the blank screen
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
