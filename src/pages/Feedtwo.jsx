@@ -5,7 +5,7 @@ import {
   Chip, CircularProgress, Alert, TextField, MenuItem,
   Slider, InputAdornment, Paper, Button, IconButton,
   Rating, useMediaQuery, useTheme,
-  Grid // <-- CRITICAL FIX: Added Grid back
+  Grid
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -14,6 +14,16 @@ import FlashOnIcon from '@mui/icons-material/FlashOn';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import api from '../api';
+
+// Helper to generate/retrieve a session key for anonymous users
+const getSessionKey = () => {
+  let key = localStorage.getItem('marketplace_session_key');
+  if (!key) {
+    key = 'sess-' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+    localStorage.setItem('marketplace_session_key', key);
+  }
+  return key;
+};
 
 export default function GalleryView({ selectedCategory }) {
   const navigate = useNavigate();
@@ -34,6 +44,20 @@ export default function GalleryView({ selectedCategory }) {
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [conditionFilter, setConditionFilter] = useState('ALL');
   const [maxPrice, setMaxPrice] = useState(5000000);
+
+  // ─── SEARCH TRACKING (debounced) ──────────────────────────────────
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+
+    const timer = setTimeout(() => {
+      api.post('api/track-search/', {
+        query: searchQuery.trim(),
+        session_key: getSessionKey(),
+      }).catch(err => console.error('Search tracking failed:', err));
+    }, 600); // debounce 600ms
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Fetch products
   useEffect(() => {
@@ -96,7 +120,7 @@ export default function GalleryView({ selectedCategory }) {
     return result;
   }, [products, selectedCategory, searchQuery, categoryFilter, locationFilter, conditionFilter, maxPrice]);
 
-  // ─── UPDATED CLOUDINARY SMART CROP FUNCTION (Maintains Aspect Ratio) ──────
+  // ─── UPDATED CLOUDINARY SMART CROP FUNCTION ───────────────────────
   const getOptimizedThumbnail = (photosArray) => {
     if (!photosArray || !Array.isArray(photosArray) || photosArray.length === 0) return 'https://cloudinary.com';
     const firstPhotoObject = photosArray[0];
@@ -108,6 +132,18 @@ export default function GalleryView({ selectedCategory }) {
       }
     }
     return rawUrl || 'https://cloudinary.com';
+  };
+
+  // ─── PRODUCT CLICK HANDLER (tracks click and navigates) ─────────
+  const handleProductClick = (productId) => {
+    api.post('api/track-click/', {
+      product: productId,
+      search_query: searchQuery.trim() || null,
+      session_key: getSessionKey(),
+      is_detail_view: true,
+    }).catch(err => console.error('Click tracking failed:', err));
+
+    navigate(`/product/${productId}`);
   };
 
   if (loading || configLoading) return (
@@ -174,7 +210,7 @@ export default function GalleryView({ selectedCategory }) {
         </Grid>
       </Paper>
 
-      {/* SHORT, UNIFORM, 4-COLUMN GRID WITH PERFECT ASPECT RATIO */}
+      {/* Grid of products */}
       {filteredProducts.length === 0 ? (
         <Paper elevation={0} sx={{ p: { xs: 4, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px dashed #ccc', bgcolor: '#fafafa' }}>
           <Typography variant="h6" align="center" color="text.secondary" sx={{ fontWeight: 'bold' }}>No products found</Typography>
@@ -194,7 +230,7 @@ export default function GalleryView({ selectedCategory }) {
               <Card
                 key={item.id}
                 elevation={0}
-                onClick={() => navigate(`/product/${item.id}`)}
+                onClick={() => handleProductClick(item.id)}
                 sx={{
                   width: '100%',
                   height: '100%',
@@ -211,7 +247,7 @@ export default function GalleryView({ selectedCategory }) {
                   '&:hover': { boxShadow: '0 6px 15px rgba(0,0,0,0.1)' },
                 }}
               >
-                {/* 4:3 Aspect Ratio Box - Prevents cropping and makes cards shorter */}
+                {/* 4:3 Aspect Ratio Box */}
                 <Box sx={{ 
                   position: 'relative', 
                   width: '100%', 
@@ -231,7 +267,7 @@ export default function GalleryView({ selectedCategory }) {
                     style={{ 
                       width: '100%', 
                       height: '100%', 
-                      objectFit: 'contain', // Maintains original aspect ratio without cropping
+                      objectFit: 'contain',
                       padding: '6px'
                     }}
                   />
@@ -245,7 +281,6 @@ export default function GalleryView({ selectedCategory }) {
                   </IconButton>
                 </Box>
 
-                {/* TIGHT, WELL-CONTAINED TEXT AREA */}
                 <CardContent sx={{ 
                   p: '10px', 
                   display: 'flex', 
@@ -258,7 +293,7 @@ export default function GalleryView({ selectedCategory }) {
                     fontWeight: '600', color: '#333', lineHeight: 1.3,
                     display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                     overflow: 'hidden', textOverflow: 'ellipsis',
-                    minHeight: '2.6em', // Ensures exactly 2 lines of space
+                    minHeight: '2.6em',
                     fontSize: '0.85rem'
                   }}>
                     {item.title}
@@ -280,7 +315,6 @@ export default function GalleryView({ selectedCategory }) {
                     )}
                   </Box>
 
-                  {/* Pushes location to the very bottom */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 'auto', pt: 1, color: '#777' }}>
                     <LocationOnIcon sx={{ fontSize: '12px', color: '#d32f2f' }} />
                     <Typography variant="caption" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -289,7 +323,6 @@ export default function GalleryView({ selectedCategory }) {
                   </Box>
                 </CardContent>
 
-                {/* SHORT, COMPACT BUTTONS */}
                 <Box sx={{ p: '10px', pt: '2px' }}>
                   {isFeatured ? (
                     <Button variant="contained" size="small" fullWidth disabled startIcon={<VerifiedIcon style={{ fontSize: '14px' }} />} sx={{ bgcolor: '#e8f5e9', color: '#2e7d32', fontSize: '0.7rem', fontWeight: 'bold', textTransform: 'none', height: '30px', '&.Mui-disabled': { bgcolor: '#e8f5e9', color: '#2e7d32', opacity: 0.8 } }}>
