@@ -13,6 +13,7 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import ScaleIcon from '@mui/icons-material/Scale';
 import api from '../api';
 
 // Helper to generate/retrieve a session key for anonymous users
@@ -23,6 +24,48 @@ const getSessionKey = () => {
     localStorage.setItem('marketplace_session_key', key);
   }
   return key;
+};
+
+// ─── WEIGHT FORMATTING ────────────────────────────────────────────
+// Normalise whatever unit the API sends into kilograms first.
+const toKilograms = (value, unit) => {
+  const u = String(unit || 'kg').trim().toLowerCase();
+  if (['g', 'gram', 'grams', 'gm', 'gms'].includes(u)) return value / 1000;
+  if (['t', 'ton', 'tons', 'tonne', 'tonnes'].includes(u)) return value * 1000;
+  return value; // kg (or lb handled by caller) is the default
+};
+
+const trimNumber = (n) => Number(n.toFixed(2)).toString();
+
+/**
+ * Format a product weight for display.
+ *  < 1 kg        -> grams   (e.g. 500 g)
+ *  1 – 999.99 kg -> kilograms (e.g. 1 kg, 12.5 kg)
+ *  >= 1000 kg    -> tonnes  (e.g. 1 tonne, 2.5 tonnes)
+ * Returns null when there is no usable weight.
+ */
+export const formatWeight = (value, unit = 'kg') => {
+  const raw = parseFloat(value);
+  if (raw === null || isNaN(raw) || raw <= 0) return null;
+
+  const kg = toKilograms(raw, unit);
+  if (!isFinite(kg) || kg <= 0) return null;
+
+  // Tonnes
+  if (kg >= 1000) {
+    const tonnes = kg / 1000;
+    return `${trimNumber(tonnes)} tonne${tonnes === 1 ? '' : 's'}`;
+  }
+
+  // Kilograms
+  if (kg >= 1) {
+    return `${trimNumber(kg)} kg`;
+  }
+
+  // Grams (guard against rounding up to a full kg)
+  const grams = Math.round(kg * 1000);
+  if (grams >= 1000) return '1 kg';
+  return `${grams} g`;
 };
 
 export default function GalleryView({ selectedCategory }) {
@@ -225,6 +268,7 @@ export default function GalleryView({ selectedCategory }) {
             const isFeatured = item.is_featured === true;
             const hasDiscount = item.original_price && parseFloat(item.original_price) > parseFloat(item.price);
             const discountPercent = hasDiscount ? Math.round(((parseFloat(item.original_price) - parseFloat(item.price)) / parseFloat(item.original_price)) * 100) : 0;
+            const weightLabel = formatWeight(item.weight ?? item.weight_kg ?? item.weight_value, item.weight_unit || item.unit || 'kg');
 
             return (
               <Card
@@ -314,6 +358,16 @@ export default function GalleryView({ selectedCategory }) {
                       </>
                     )}
                   </Box>
+
+                  {/* ─── WEIGHT ─── */}
+                  {weightLabel && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#555' }}>
+                      <ScaleIcon sx={{ fontSize: '12px', color: '#2e7d32' }} />
+                      <Typography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 700 }}>
+                        {weightLabel}
+                      </Typography>
+                    </Box>
+                  )}
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 'auto', pt: 1, color: '#777' }}>
                     <LocationOnIcon sx={{ fontSize: '12px', color: '#d32f2f' }} />
