@@ -43,7 +43,7 @@ export default function GalleryView({ selectedCategory }) {
   const [locationFilter, setLocationFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [conditionFilter, setConditionFilter] = useState('ALL');
-  const [maxPrice, setMaxPrice] = useState(5000000);
+  const [maxPrice, setMaxPrice] = useState(500000000);
 
   // ─── SEARCH TRACKING (debounced) ──────────────────────────────────
   useEffect(() => {
