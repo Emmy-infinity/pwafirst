@@ -5,7 +5,7 @@ import {
   Chip, CircularProgress, Alert, TextField, MenuItem,
   Slider, InputAdornment, Paper, Button, IconButton,
   Rating, useMediaQuery, useTheme,
-  Grid
+  Grid, Collapse
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -15,6 +15,8 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ScaleIcon from '@mui/icons-material/Scale';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import api from '../api';
 
 // Helper to generate/retrieve a session key for anonymous users
@@ -73,9 +75,11 @@ export default function GalleryView({ selectedCategory }) {
   const [promoFee, setPromoFee] = useState(20000);
   const [configLoading, setConfigLoading] = useState(true);
 
+  // ─── Mobile filter panel toggle ──────────────────────────────────
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   // ─── Price bounds (dynamic from backend) ─────────────────────────
   const [priceBounds, setPriceBounds] = useState(FALLBACK_BOUNDS);
-  // null = "user hasn't touched the slider"; falls back to priceBounds.max in the filter
   const [maxPrice, setMaxPrice] = useState(null);
 
   // Filters
@@ -129,7 +133,6 @@ export default function GalleryView({ selectedCategory }) {
           api.get('api/site-config/'),
           api.get('api/categories/'),
           api.get('api/locations/'),
-          // Non-fatal: if this endpoint isn't wired yet, fall back gracefully
           api.get('api/products/price-bounds/')
             .catch(() => ({ data: FALLBACK_BOUNDS })),
         ]);
@@ -146,7 +149,6 @@ export default function GalleryView({ selectedCategory }) {
         setLocations(locRes.data || []);
         setPriceBounds(fetchedBounds);
 
-        // ─── Initialize slider from URL, else from the real ceiling ──
         const urlMax = Number(searchParams.get('max_price'));
         const effectiveMax =
           urlMax > 0 && urlMax <= fetchedBounds.max
@@ -185,7 +187,6 @@ export default function GalleryView({ selectedCategory }) {
     return () => clearTimeout(timer);
   }, [maxPrice, priceBounds.max, setSearchParams]);
 
-  // Effective filter value — if user hasn't touched slider, no price cap
   const effectiveMaxPrice = maxPrice ?? priceBounds.max;
 
   // Filter products
@@ -242,12 +243,20 @@ export default function GalleryView({ selectedCategory }) {
     navigate(`/product/${productId}`);
   };
 
-  // ─── Reset price filter to the real ceiling ───────────────────────
   const handleResetPrice = () => {
     setMaxPrice(priceBounds.max);
   };
 
   const isPriceFiltered = maxPrice != null && maxPrice < priceBounds.max;
+
+  // Count how many filters are active (for mobile badge)
+  const activeFilterCount = [
+    categoryFilter !== 'ALL',
+    locationFilter !== 'ALL',
+    conditionFilter !== 'ALL',
+    isPriceFiltered,
+    searchQuery.trim() !== '',
+  ].filter(Boolean).length;
 
   if (loading || configLoading) return (
     <Box display="flex" flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center" minHeight="50vh">
@@ -260,7 +269,6 @@ export default function GalleryView({ selectedCategory }) {
 
   if (error) return <Box flexGrow={1} sx={{ p: 2 }}><Alert severity="error">{error}</Alert></Box>;
 
-  // Slider step: ~500 buckets across the full range, minimum 5,000 UGX
   const sliderStep = Math.max(5000, Math.floor(priceBounds.max / 500));
 
   return (
@@ -274,88 +282,219 @@ export default function GalleryView({ selectedCategory }) {
       gap: { xs: 2, sm: 2.5, md: 2 }
     }}>
 
-      {/* Compact Filter Bar */}
-      <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 1.5 }, borderRadius: '8px', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: 1.5, boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+      {/* ─── Mobile filter toggle button ─────────────────────────── */}
+      <Button
+        variant="outlined"
+        color="success"
+        size="small"
+        onClick={() => setFiltersOpen(o => !o)}
+        endIcon={filtersOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        sx={{
+          display: { xs: 'flex', md: 'none' },
+          textTransform: 'none',
+          fontWeight: 800,
+          justifyContent: 'space-between',
+          px: 2,
+          py: 1,
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FilterAltIcon color="success" sx={{ fontSize: '1.2rem' }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#111', fontSize: '1rem' }}>Filter Items</Typography>
-        </Box>
-        <Grid container spacing={1}>
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              size="small" label="Search for anything..." fullWidth
-              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
+          <FilterAltIcon fontSize="small" />
+          <span>{filtersOpen ? 'Hide Filters' : 'Show Filters'}</span>
+          {activeFilterCount > 0 && (
+            <Chip
+              label={activeFilterCount}
+              size="small"
+              color="success"
+              sx={{ height: 18, fontSize: '0.65rem', fontWeight: 800 }}
             />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField select size="small" label="Category" fullWidth value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-              <MenuItem value="ALL">All Categories</MenuItem>
-              {categories.map(cat => <MenuItem key={cat.id} value={cat.slug}>{cat.name}</MenuItem>)}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField select size="small" label="Location" fullWidth value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)}>
-              <MenuItem value="ALL">All Locations</MenuItem>
-              {locations.map(loc => <MenuItem key={loc.id} value={loc.code}>{loc.name}</MenuItem>)}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6} md={6}>
-            <TextField select size="small" label="Condition" fullWidth value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)}>
-              <MenuItem value="ALL">All Conditions</MenuItem>
-              <MenuItem value="NEW">Brand New / Sealed</MenuItem>
-              <MenuItem value="REFURB">Refurbished / Tested</MenuItem>
-              <MenuItem value="USED">Used / Working</MenuItem>
-              <MenuItem value="SCRAP">Scrap / For Spares</MenuItem>
-            </TextField>
-          </Grid>
+          )}
+        </Box>
+      </Button>
 
-          {/* ─── DYNAMIC MAX-PRICE SLIDER ─── */}
-          <Grid item xs={12} sm={6} md={6}>
-            <Box sx={{ px: 1 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                <Typography variant="caption" sx={{ fontWeight: '800', color: '#444', fontSize: '0.7rem' }}>
-                  Max Price:{' '}
-                  <strong style={{ color: '#2e7d32' }}>
-                    UGX {Math.round(effectiveMaxPrice).toLocaleString()}
-                  </strong>
-                  {isPriceFiltered && (
-                    <Typography component="span" variant="caption" sx={{ color: '#999', ml: 0.5 }}>
-                      / {priceBounds.max.toLocaleString()}
-                    </Typography>
-                  )}
-                </Typography>
-                {isPriceFiltered && (
+      {/* ─── Compact Filter Bar ──────────────────────────────────── */}
+      <Collapse in={filtersOpen || !isMobile} timeout={250}>
+        <Paper
+          variant="outlined"
+          sx={{
+            p: { xs: 1.5, sm: 2, md: 1.5 },
+            borderRadius: '8px',
+            backgroundColor: '#ffffff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.5,
+            boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+          }}
+        >
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
+            <FilterAltIcon color="success" sx={{ fontSize: '1.2rem' }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: '900', color: '#111', fontSize: '1rem' }}>
+              Filter Items
+            </Typography>
+          </Box>
+
+          <Grid container spacing={1}>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                size="small" label="Search for anything..." fullWidth
+                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField select size="small" label="Category" fullWidth value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                <MenuItem value="ALL">All Categories</MenuItem>
+                {categories.map(cat => <MenuItem key={cat.id} value={cat.slug}>{cat.name}</MenuItem>)}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField select size="small" label="Location" fullWidth value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)}>
+                <MenuItem value="ALL">All Locations</MenuItem>
+                {locations.map(loc => <MenuItem key={loc.id} value={loc.code}>{loc.name}</MenuItem>)}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6} md={6}>
+              <TextField select size="small" label="Condition" fullWidth value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)}>
+                <MenuItem value="ALL">All Conditions</MenuItem>
+                <MenuItem value="NEW">Brand New / Sealed</MenuItem>
+                <MenuItem value="REFURB">Refurbished / Tested</MenuItem>
+                <MenuItem value="USED">Used / Working</MenuItem>
+                <MenuItem value="SCRAP">Scrap / For Spares</MenuItem>
+              </TextField>
+            </Grid>
+
+            {/* ─── DYNAMIC MAX-PRICE SLIDER (anti-jump) ──────────── */}
+            <Grid item xs={12} sm={12} md={6}>
+              <Box
+                sx={{
+                  width: '100%',
+                  overflow: 'hidden',
+                  px: { xs: 0.5, sm: 1 },
+                  py: 0.5,
+                }}
+              >
+                {/* Header: label + reset, height-locked */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    justifyContent: 'space-between',
+                    gap: 1,
+                    minHeight: 22,
+                    mb: 0.25,
+                  }}
+                >
+                  <Typography
+                    component="div"
+                    sx={{
+                      fontSize: '0.7rem',
+                      fontWeight: 800,
+                      color: '#444',
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: 0.5,
+                      minWidth: 0,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    <Box component="span" sx={{ flexShrink: 0 }}>Max:</Box>
+                    <Box
+                      component="span"
+                      sx={{
+                        color: '#2e7d32',
+                        fontWeight: 900,
+                        fontVariantNumeric: 'tabular-nums',
+                        minWidth: '13ch',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      UGX {Math.round(effectiveMaxPrice).toLocaleString()}
+                    </Box>
+                  </Typography>
+
+                  {/* Reset is ALWAYS mounted. visibility hides without shifting layout. */}
                   <Button
-                    size="small" variant="text" color="success"
+                    size="small"
+                    variant="text"
+                    color="success"
                     startIcon={<RefreshIcon sx={{ fontSize: '12px !important' }} />}
                     onClick={handleResetPrice}
-                    sx={{ fontSize: '0.65rem', textTransform: 'none', minWidth: 0, py: 0 }}
+                    disableRipple
+                    sx={{
+                      fontSize: '0.65rem',
+                      textTransform: 'none',
+                      minWidth: 0,
+                      py: 0,
+                      px: 0.75,
+                      height: 22,
+                      flexShrink: 0,
+                      visibility: isPriceFiltered ? 'visible' : 'hidden',
+                      pointerEvents: isPriceFiltered ? 'auto' : 'none',
+                    }}
                   >
                     Reset
                   </Button>
-                )}
+                </Box>
+
+                <Slider
+                  value={effectiveMaxPrice}
+                  min={priceBounds.min}
+                  max={priceBounds.max}
+                  step={sliderStep}
+                  onChange={(e, val) => setMaxPrice(val)}
+                  color="success"
+                  size="small"
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={(v) => `UGX ${Number(v).toLocaleString()}`}
+                  sx={{
+                    color: '#2e7d32',
+                    py: { xs: 0.5, sm: 1 },
+                    '& .MuiSlider-thumb': { width: 14, height: 14 },
+                    '& .MuiSlider-valueLabel': {
+                      fontSize: '0.65rem',
+                      py: 0.25,
+                      px: 0.5,
+                      '&::before': { display: 'none' },
+                    },
+                  }}
+                />
+
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mt: -0.5,
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontSize: '0.6rem',
+                      color: '#999',
+                      fontVariantNumeric: 'tabular-nums',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    UGX {priceBounds.min.toLocaleString()}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontSize: '0.6rem',
+                      color: '#999',
+                      fontVariantNumeric: 'tabular-nums',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    UGX {priceBounds.max.toLocaleString()}
+                  </Typography>
+                </Box>
               </Box>
-              <Slider
-                value={effectiveMaxPrice}
-                min={priceBounds.min}
-                max={priceBounds.max}
-                step={sliderStep}
-                onChange={(e, val) => setMaxPrice(val)}
-                color="success"
-                size="small"
-                valueLabelDisplay="auto"
-                valueLabelFormat={(v) => `UGX ${Number(v).toLocaleString()}`}
-                sx={{
-                  color: '#2e7d32',
-                  '& .MuiSlider-thumb': { width: 16, height: 16 },
-                  '& .MuiSlider-valueLabel': { fontSize: '0.7rem' },
-                }}
-              />
-            </Box>
+            </Grid>
           </Grid>
-        </Grid>
-      </Paper>
+        </Paper>
+      </Collapse>
 
       {/* Grid of products */}
       {filteredProducts.length === 0 ? (
@@ -405,7 +544,6 @@ export default function GalleryView({ selectedCategory }) {
                   '&:hover': { boxShadow: '0 6px 15px rgba(0,0,0,0.1)' },
                 }}
               >
-                {/* 4:3 Aspect Ratio Box */}
                 <Box sx={{
                   position: 'relative',
                   width: '100%',
