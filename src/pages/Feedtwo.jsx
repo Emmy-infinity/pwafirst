@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box, Typography, Card, CardContent, CardMedia,
   Chip, CircularProgress, Alert, TextField, MenuItem,
@@ -14,6 +14,7 @@ import FlashOnIcon from '@mui/icons-material/FlashOn';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ScaleIcon from '@mui/icons-material/Scale';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import api from '../api';
 
 // Helper to generate/retrieve a session key for anonymous users
@@ -27,23 +28,15 @@ const getSessionKey = () => {
 };
 
 // ─── WEIGHT FORMATTING ────────────────────────────────────────────
-// Normalise whatever unit the API sends into kilograms first.
 const toKilograms = (value, unit) => {
   const u = String(unit || 'kg').trim().toLowerCase();
   if (['g', 'gram', 'grams', 'gm', 'gms'].includes(u)) return value / 1000;
   if (['t', 'ton', 'tons', 'tonne', 'tonnes'].includes(u)) return value * 1000;
-  return value; // kg (or lb handled by caller) is the default
+  return value;
 };
 
 const trimNumber = (n) => Number(n.toFixed(2)).toString();
 
-/**
- * Format a product weight for display.
- *  < 1 kg        -> grams   (e.g. 500 g)
- *  1 – 999.99 kg -> kilograms (e.g. 1 kg, 12.5 kg)
- *  >= 1000 kg    -> tonnes  (e.g. 1 tonne, 2.5 tonnes)
- * Returns null when there is no usable weight.
- */
 export const formatWeight = (value, unit = 'kg') => {
   const raw = parseFloat(value);
   if (raw === null || isNaN(raw) || raw <= 0) return null;
@@ -51,27 +44,26 @@ export const formatWeight = (value, unit = 'kg') => {
   const kg = toKilograms(raw, unit);
   if (!isFinite(kg) || kg <= 0) return null;
 
-  // Tonnes
   if (kg >= 1000) {
     const tonnes = kg / 1000;
     return `${trimNumber(tonnes)} tonne${tonnes === 1 ? '' : 's'}`;
   }
-
-  // Kilograms
   if (kg >= 1) {
     return `${trimNumber(kg)} kg`;
   }
-
-  // Grams (guard against rounding up to a full kg)
   const grams = Math.round(kg * 1000);
   if (grams >= 1000) return '1 kg';
   return `${grams} g`;
 };
 
+// ─── PRICE BOUNDS FALLBACK ────────────────────────────────────────
+const FALLBACK_BOUNDS = { min: 0, max: 5_000_000 };
+
 export default function GalleryView({ selectedCategory }) {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -81,12 +73,16 @@ export default function GalleryView({ selectedCategory }) {
   const [promoFee, setPromoFee] = useState(20000);
   const [configLoading, setConfigLoading] = useState(true);
 
+  // ─── Price bounds (dynamic from backend) ─────────────────────────
+  const [priceBounds, setPriceBounds] = useState(FALLBACK_BOUNDS);
+  // null = "user hasn't touched the slider"; falls back to priceBounds.max in the filter
+  const [maxPrice, setMaxPrice] = useState(null);
+
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [conditionFilter, setConditionFilter] = useState('ALL');
-  const [maxPrice, setMaxPrice] = useState(500000000);
 
   // ─── SEARCH TRACKING (debounced) ──────────────────────────────────
   useEffect(() => {
@@ -97,7 +93,7 @@ export default function GalleryView({ selectedCategory }) {
         query: searchQuery.trim(),
         session_key: getSessionKey(),
       }).catch(err => console.error('Search tracking failed:', err));
-    }, 600); // debounce 600ms
+    }, 600);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -123,49 +119,106 @@ export default function GalleryView({ selectedCategory }) {
     return () => { isMounted = false; };
   }, []);
 
-  // Fetch categories, locations, and promotion fee
+  // Fetch categories, locations, promotion fee, and price bounds
   useEffect(() => {
     let isMounted = true;
     setConfigLoading(true);
     const fetchConfig = async () => {
       try {
-        const [feeRes, catRes, locRes] = await Promise.all([
+        const [feeRes, catRes, locRes, boundsRes] = await Promise.all([
           api.get('api/site-config/'),
           api.get('api/categories/'),
-          api.get('api/locations/')
+          api.get('api/locations/'),
+          // Non-fatal: if this endpoint isn't wired yet, fall back gracefully
+          api.get('api/products/price-bounds/')
+            .catch(() => ({ data: FALLBACK_BOUNDS })),
         ]);
+
+        if (!isMounted) return;
+
+        const fetchedBounds = {
+          min: Number(boundsRes.data?.min_price) || 0,
+          max: Number(boundsRes.data?.max_price) || FALLBACK_BOUNDS.max,
+        };
+
+        setPromoFee(feeRes.data.promotion_fee || 20000);
+        setCategories(catRes.data || []);
+        setLocations(locRes.data || []);
+        setPriceBounds(fetchedBounds);
+
+        // ─── Initialize slider from URL, else from the real ceiling ──
+        const urlMax = Number(searchParams.get('max_price'));
+        const effectiveMax =
+          urlMax > 0 && urlMax <= fetchedBounds.max
+            ? urlMax
+            : fetchedBounds.max;
+        setMaxPrice(effectiveMax);
+
+        setConfigLoading(false);
+      } catch (err) {
         if (isMounted) {
-          setPromoFee(feeRes.data.promotion_fee || 20000);
-          setCategories(catRes.data || []);
-          setLocations(locRes.data || []);
+          setPromoFee(20000);
+          setCategories([]);
+          setLocations([]);
+          setPriceBounds(FALLBACK_BOUNDS);
+          setMaxPrice(FALLBACK_BOUNDS.max);
           setConfigLoading(false);
         }
-      } catch (err) {
-        if (isMounted) { setPromoFee(20000); setCategories([]); setLocations([]); setConfigLoading(false); }
       }
     };
     fetchConfig();
     return () => { isMounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ─── Persist maxPrice to the URL (debounced) ─────────────────────
+  useEffect(() => {
+    if (maxPrice == null) return;
+    const timer = setTimeout(() => {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        if (maxPrice < priceBounds.max) next.set('max_price', String(Math.round(maxPrice)));
+        else next.delete('max_price');
+        return next;
+      }, { replace: true });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [maxPrice, priceBounds.max, setSearchParams]);
+
+  // Effective filter value — if user hasn't touched slider, no price cap
+  const effectiveMaxPrice = maxPrice ?? priceBounds.max;
 
   // Filter products
   const filteredProducts = useMemo(() => {
     let result = products;
-    if (selectedCategory && selectedCategory !== 'ALL') result = result.filter(p => String(p.category_slug || '').toUpperCase() === String(selectedCategory).toUpperCase());
+    if (selectedCategory && selectedCategory !== 'ALL') {
+      result = result.filter(p =>
+        String(p.category_slug || '').toUpperCase() === String(selectedCategory).toUpperCase()
+      );
+    }
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase();
-      result = result.filter(p => (p.title && p.title.toLowerCase().includes(query)) || (p.description && p.description.toLowerCase().includes(query)));
+      result = result.filter(p =>
+        (p.title && p.title.toLowerCase().includes(query)) ||
+        (p.description && p.description.toLowerCase().includes(query))
+      );
     }
     if (categoryFilter !== 'ALL') result = result.filter(p => p.category_slug === categoryFilter);
     if (locationFilter !== 'ALL') result = result.filter(p => p.location_code === locationFilter);
     if (conditionFilter !== 'ALL') result = result.filter(p => p.condition === conditionFilter);
-    result = result.filter(p => (parseFloat(p.price) || 0) <= maxPrice);
+    result = result.filter(p => (parseFloat(p.price) || 0) <= effectiveMaxPrice);
     return result;
-  }, [products, selectedCategory, searchQuery, categoryFilter, locationFilter, conditionFilter, maxPrice]);
+  }, [
+    products, selectedCategory, searchQuery,
+    categoryFilter, locationFilter, conditionFilter,
+    effectiveMaxPrice
+  ]);
 
-  // ─── UPDATED CLOUDINARY SMART CROP FUNCTION ───────────────────────
+  // ─── CLOUDINARY SMART CROP ────────────────────────────────────────
   const getOptimizedThumbnail = (photosArray) => {
-    if (!photosArray || !Array.isArray(photosArray) || photosArray.length === 0) return 'https://cloudinary.com';
+    if (!photosArray || !Array.isArray(photosArray) || photosArray.length === 0) {
+      return 'https://res.cloudinary.com/demo/image/upload/sample.jpg';
+    }
     const firstPhotoObject = photosArray[0];
     const rawUrl = firstPhotoObject?.image_url || firstPhotoObject?.image;
     if (rawUrl && rawUrl.includes('cloudinary.com')) {
@@ -174,10 +227,10 @@ export default function GalleryView({ selectedCategory }) {
         return `${parts[0]}/upload/f_auto,q_auto,w_600,c_limit/${parts[1]}`;
       }
     }
-    return rawUrl || 'https://cloudinary.com';
+    return rawUrl || 'https://res.cloudinary.com/demo/image/upload/sample.jpg';
   };
 
-  // ─── PRODUCT CLICK HANDLER (tracks click and navigates) ─────────
+  // ─── PRODUCT CLICK HANDLER ────────────────────────────────────────
   const handleProductClick = (productId) => {
     api.post('api/track-click/', {
       product: productId,
@@ -188,6 +241,13 @@ export default function GalleryView({ selectedCategory }) {
 
     navigate(`/product/${productId}`);
   };
+
+  // ─── Reset price filter to the real ceiling ───────────────────────
+  const handleResetPrice = () => {
+    setMaxPrice(priceBounds.max);
+  };
+
+  const isPriceFiltered = maxPrice != null && maxPrice < priceBounds.max;
 
   if (loading || configLoading) return (
     <Box display="flex" flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center" minHeight="50vh">
@@ -200,17 +260,20 @@ export default function GalleryView({ selectedCategory }) {
 
   if (error) return <Box flexGrow={1} sx={{ p: 2 }}><Alert severity="error">{error}</Alert></Box>;
 
+  // Slider step: ~500 buckets across the full range, minimum 5,000 UGX
+  const sliderStep = Math.max(5000, Math.floor(priceBounds.max / 500));
+
   return (
-    <Box sx={{ 
-      flexGrow: 1, 
-      width: '100%', 
-      px: { xs: 1, sm: 2, md: 2 }, 
-      py: { xs: 1.5, sm: 2, md: 2 }, 
-      display: 'flex', 
-      flexDirection: 'column', 
-      gap: { xs: 2, sm: 2.5, md: 2 } 
+    <Box sx={{
+      flexGrow: 1,
+      width: '100%',
+      px: { xs: 1, sm: 2, md: 2 },
+      py: { xs: 1.5, sm: 2, md: 2 },
+      display: 'flex',
+      flexDirection: 'column',
+      gap: { xs: 2, sm: 2.5, md: 2 }
     }}>
-      
+
       {/* Compact Filter Bar */}
       <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 1.5 }, borderRadius: '8px', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: 1.5, boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -219,7 +282,11 @@ export default function GalleryView({ selectedCategory }) {
         </Box>
         <Grid container spacing={1}>
           <Grid item xs={12} sm={6} md={4}>
-            <TextField size="small" label="Search for anything..." fullWidth value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }} />
+            <TextField
+              size="small" label="Search for anything..." fullWidth
+              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
+            />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <TextField select size="small" label="Category" fullWidth value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
@@ -242,12 +309,49 @@ export default function GalleryView({ selectedCategory }) {
               <MenuItem value="SCRAP">Scrap / For Spares</MenuItem>
             </TextField>
           </Grid>
+
+          {/* ─── DYNAMIC MAX-PRICE SLIDER ─── */}
           <Grid item xs={12} sm={6} md={6}>
             <Box sx={{ px: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: '800', color: '#444', fontSize: '0.7rem' }}>
-                Max Price: <strong style={{ color: '#2e7d32' }}>UGX {maxPrice.toLocaleString()}</strong>
-              </Typography>
-              <Slider value={maxPrice} min={5000} max={5000000} step={5000} onChange={(e, val) => setMaxPrice(val)} color="success" size="small" />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: '800', color: '#444', fontSize: '0.7rem' }}>
+                  Max Price:{' '}
+                  <strong style={{ color: '#2e7d32' }}>
+                    UGX {Math.round(effectiveMaxPrice).toLocaleString()}
+                  </strong>
+                  {isPriceFiltered && (
+                    <Typography component="span" variant="caption" sx={{ color: '#999', ml: 0.5 }}>
+                      / {priceBounds.max.toLocaleString()}
+                    </Typography>
+                  )}
+                </Typography>
+                {isPriceFiltered && (
+                  <Button
+                    size="small" variant="text" color="success"
+                    startIcon={<RefreshIcon sx={{ fontSize: '12px !important' }} />}
+                    onClick={handleResetPrice}
+                    sx={{ fontSize: '0.65rem', textTransform: 'none', minWidth: 0, py: 0 }}
+                  >
+                    Reset
+                  </Button>
+                )}
+              </Box>
+              <Slider
+                value={effectiveMaxPrice}
+                min={priceBounds.min}
+                max={priceBounds.max}
+                step={sliderStep}
+                onChange={(e, val) => setMaxPrice(val)}
+                color="success"
+                size="small"
+                valueLabelDisplay="auto"
+                valueLabelFormat={(v) => `UGX ${Number(v).toLocaleString()}`}
+                sx={{
+                  color: '#2e7d32',
+                  '& .MuiSlider-thumb': { width: 16, height: 16 },
+                  '& .MuiSlider-valueLabel': { fontSize: '0.7rem' },
+                }}
+              />
             </Box>
           </Grid>
         </Grid>
@@ -257,18 +361,28 @@ export default function GalleryView({ selectedCategory }) {
       {filteredProducts.length === 0 ? (
         <Paper elevation={0} sx={{ p: { xs: 4, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px dashed #ccc', bgcolor: '#fafafa' }}>
           <Typography variant="h6" align="center" color="text.secondary" sx={{ fontWeight: 'bold' }}>No products found</Typography>
+          {isPriceFiltered && (
+            <Button size="small" color="success" onClick={handleResetPrice} sx={{ mt: 1, textTransform: 'none' }}>
+              Clear price filter
+            </Button>
+          )}
         </Paper>
       ) : (
-        <Box sx={{ 
-          display: 'grid', 
+        <Box sx={{
+          display: 'grid',
           gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)', lg: 'repeat(4, 1fr)', xl: 'repeat(5, 1fr)' },
-          gap: '10px' 
+          gap: '10px'
         }}>
           {filteredProducts.map((item) => {
             const isFeatured = item.is_featured === true;
             const hasDiscount = item.original_price && parseFloat(item.original_price) > parseFloat(item.price);
-            const discountPercent = hasDiscount ? Math.round(((parseFloat(item.original_price) - parseFloat(item.price)) / parseFloat(item.original_price)) * 100) : 0;
-            const weightLabel = formatWeight(item.weight ?? item.weight_kg ?? item.weight_value, item.weight_unit || item.unit || 'kg');
+            const discountPercent = hasDiscount
+              ? Math.round(((parseFloat(item.original_price) - parseFloat(item.price)) / parseFloat(item.original_price)) * 100)
+              : 0;
+            const weightLabel = formatWeight(
+              item.weight ?? item.weight_kg ?? item.weight_value,
+              item.weight_unit || item.unit || 'kg'
+            );
 
             return (
               <Card
@@ -292,12 +406,12 @@ export default function GalleryView({ selectedCategory }) {
                 }}
               >
                 {/* 4:3 Aspect Ratio Box */}
-                <Box sx={{ 
-                  position: 'relative', 
-                  width: '100%', 
-                  aspectRatio: '4 / 3', 
-                  bgcolor: '#f7f7f7', 
-                  overflow: 'hidden', 
+                <Box sx={{
+                  position: 'relative',
+                  width: '100%',
+                  aspectRatio: '4 / 3',
+                  bgcolor: '#f7f7f7',
+                  overflow: 'hidden',
                   flexShrink: 0,
                   display: 'flex',
                   alignItems: 'center',
@@ -308,14 +422,14 @@ export default function GalleryView({ selectedCategory }) {
                     image={getOptimizedThumbnail(item.photos)}
                     alt={item.title}
                     loading="lazy"
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
+                    style={{
+                      width: '100%',
+                      height: '100%',
                       objectFit: 'contain',
                       padding: '6px'
                     }}
                   />
-                  
+
                   <Box sx={{ position: 'absolute', top: 8, left: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     {isFeatured && <Chip label="SPONSORED" size="small" sx={{ bgcolor: '#f57c00', color: '#fff', fontWeight: 'bold', fontSize: '9px', borderRadius: '0 4px 4px 0', height: '18px' }} />}
                     {hasDiscount && <Chip label={`-${discountPercent}%`} size="small" sx={{ bgcolor: '#d32f2f', color: '#fff', fontWeight: 'bold', fontSize: '9px', borderRadius: '0 4px 4px 0', height: '18px' }} />}
@@ -325,13 +439,13 @@ export default function GalleryView({ selectedCategory }) {
                   </IconButton>
                 </Box>
 
-                <CardContent sx={{ 
-                  p: '10px', 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  flexGrow: 1, 
-                  gap: '4px', 
-                  overflow: 'hidden' 
+                <CardContent sx={{
+                  p: '10px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flexGrow: 1,
+                  gap: '4px',
+                  overflow: 'hidden'
                 }}>
                   <Typography variant="subtitle2" title={item.title} sx={{
                     fontWeight: '600', color: '#333', lineHeight: 1.3,
@@ -359,7 +473,6 @@ export default function GalleryView({ selectedCategory }) {
                     )}
                   </Box>
 
-                  {/* ─── WEIGHT ─── */}
                   {weightLabel && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#555' }}>
                       <ScaleIcon sx={{ fontSize: '12px', color: '#2e7d32' }} />
@@ -383,7 +496,20 @@ export default function GalleryView({ selectedCategory }) {
                       Featured
                     </Button>
                   ) : (
-                    <Button variant="outlined" color="error" size="small" fullWidth startIcon={<FlashOnIcon style={{ fontSize: '14px' }} />} onClick={(e) => { e.stopPropagation(); navigate('/payment', { state: { targetProductId: item.id, promoAmount: promoFee, itemTitle: item.title } }); }} sx={{ fontSize: '0.7rem', fontWeight: 'bold', textTransform: 'none', height: '30px', borderWidth: '1.5px', '&:hover': { borderWidth: '1.5px' }, animation: 'pulse 2s infinite', '@keyframes pulse': { '0%': { opacity: 1 }, '50%': { opacity: 0.7 }, '100%': { opacity: 1 } } }}>
+                    <Button
+                      variant="outlined" color="error" size="small" fullWidth
+                      startIcon={<FlashOnIcon style={{ fontSize: '14px' }} />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('/payment', { state: { targetProductId: item.id, promoAmount: promoFee, itemTitle: item.title } });
+                      }}
+                      sx={{
+                        fontSize: '0.7rem', fontWeight: 'bold', textTransform: 'none', height: '30px',
+                        borderWidth: '1.5px', '&:hover': { borderWidth: '1.5px' },
+                        animation: 'pulse 2s infinite',
+                        '@keyframes pulse': { '0%': { opacity: 1 }, '50%': { opacity: 0.7 }, '100%': { opacity: 1 } }
+                      }}
+                    >
                       Boost
                     </Button>
                   )}
