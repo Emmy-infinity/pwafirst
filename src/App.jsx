@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Logout from "./pages/Logout"; // ✅ NEW: Imports the Logout component
-import Profile from "./pages/Profile"; // ✅ NEW: Imports the Profile component
+import Logout from "./pages/Logout";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PlotlyFromAPI from "./pages/Chart";
@@ -15,6 +15,7 @@ import GalleryView from "./pages/Feedtwo";
 import ProductDetail from "./pages/ProductDetail";
 import Footer from "./components/Footer";
 import MoMoCheckoutModal from "./components/MoMoCheckoutModal";
+import Tokens from "./pages/Tokens"; // ✅ NEW: Imports the callback page
 import { Stack, Box } from '@mui/material';
 
 function App() {
@@ -83,7 +84,18 @@ function App() {
           </ProtectedRoute>
         } />
 
-        {/* PROFILE (PROTECTED) ✅ NEW */}
+        {/* ✅ NEW: PESAPAL CALLBACK ROUTE */}
+        <Route path="/tokens" element={
+          <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fbfbfb" }}>
+            <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
+            <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+              <Tokens />
+            </Box>
+            <Footer />
+          </Box>
+        } />
+
+        {/* PROFILE (PROTECTED) */}
         <Route path="/profile" element={
           <ProtectedRoute>
             <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fbfbfb" }}>
@@ -100,7 +112,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         
-        {/* ✅ UPDATED: Use the Logout component to clear tokens */}
+        {/* LOGOUT */}
         <Route path="/logout" element={<Logout />} /> 
         
         {/* 404 FALLBACK */}
