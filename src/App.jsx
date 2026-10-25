@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Logout from "./pages/Logout"; // ✅ NEW: Imports the Logout component
+import Profile from "./pages/Profile"; // ✅ NEW: Imports the Profile component
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PlotlyFromAPI from "./pages/Chart";
@@ -16,34 +18,21 @@ import MoMoCheckoutModal from "./components/MoMoCheckoutModal";
 import { Stack, Box } from '@mui/material';
 
 function App() {
-  // 🔍 DEBUG: confirms App.jsx is rendering (remove after fixing)
   console.log('✅ App.jsx is rendering');
 
-  // State for mobile filter drawer
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
-
-  // State for category filtering
   const [selectedCategory, setSelectedCategory] = useState('ALL');
 
   return (
     <BrowserRouter>
       <Routes>
+        {/* HOME FEED */}
         <Route
           path="/"
           element={
-            <Box sx={{ 
-              display: "flex", 
-              flexDirection: "column", 
-              minHeight: "100vh", 
-              backgroundColor: "#fbfbfb" 
-            }}>
+            <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fbfbfb" }}>
               <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
-
-              <Stack 
-                direction={{ xs: 'column', md: 'row' }} 
-                spacing={2} 
-                sx={{ px: { xs: 1, md: 3 }, py: 2, flexGrow: 1 }}
-              >
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ px: { xs: 1, md: 3 }, py: 2, flexGrow: 1 }}>
                 <Sidebar
                   currentCategory={selectedCategory}
                   onCategoryChange={(slug) => setSelectedCategory(slug)}
@@ -52,19 +41,14 @@ function App() {
                 />
                 <GalleryView selectedCategory={selectedCategory} />
               </Stack>
-
               <Footer />
             </Box>
           }
         />
 
+        {/* PRODUCT DETAILS */}
         <Route path="/product/:id" element={
-          <Box sx={{ 
-            display: "flex", 
-            flexDirection: "column", 
-            minHeight: "100vh", 
-            backgroundColor: "#ffffff" 
-          }}>
+          <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#ffffff" }}>
             <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
             <Box sx={{ flexGrow: 1, width: '100%' }}>
               <ProductDetail />
@@ -73,14 +57,10 @@ function App() {
           </Box>
         } />
 
+        {/* UPLOAD (PROTECTED) */}
         <Route path="/upload" element={
           <ProtectedRoute>
-            <Box sx={{ 
-              display: "flex", 
-              flexDirection: "column", 
-              minHeight: "100vh", 
-              backgroundColor: "#fbfbfb" 
-            }}>
+            <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fbfbfb" }}>
               <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
               <Box sx={{ flexGrow: 1, py: 2 }}>
                 <ImageUploader />
@@ -90,22 +70,12 @@ function App() {
           </ProtectedRoute>
         } />
 
+        {/* PAYMENT (PROTECTED) */}
         <Route path="/payment" element={
           <ProtectedRoute>
-            <Box sx={{ 
-              display: "flex", 
-              flexDirection: "column", 
-              minHeight: "100vh", 
-              backgroundColor: "#fafafa" 
-            }}>
+            <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fafafa" }}>
               <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
-              <Box sx={{ 
-                flexGrow: 1, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                p: { xs: 2, md: 4 } 
-              }}>
+              <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: { xs: 2, md: 4 } }}>
                 <MoMoCheckoutModal />
               </Box>
               <Footer />
@@ -113,9 +83,27 @@ function App() {
           </ProtectedRoute>
         } />
 
+        {/* PROFILE (PROTECTED) ✅ NEW */}
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#fbfbfb" }}>
+              <Navbar onFilterClick={() => setMobileFilterOpen(true)} />
+              <Box sx={{ flexGrow: 1 }}>
+                <Profile />
+              </Box>
+              <Footer />
+            </Box>
+          </ProtectedRoute>
+        } />
+
+        {/* AUTHENTICATION ROUTES */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/logout" element={<Navigate to="/login" replace />} />
+        
+        {/* ✅ UPDATED: Use the Logout component to clear tokens */}
+        <Route path="/logout" element={<Logout />} /> 
+        
+        {/* 404 FALLBACK */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
