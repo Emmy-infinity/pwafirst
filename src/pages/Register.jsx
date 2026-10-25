@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import api from "../api"; // Ensure this path is correct relative to your Register.jsx
-import { useNavigate } from "react-router-dom";
+import api from "../api"; // Ensure this path is correct
+import { useNavigate, Link } from "react-router-dom";
 import {
   Box,
   TextField,
@@ -10,7 +10,6 @@ import {
   CircularProgress,
   Alert,
   Grid,
-  Link,
 } from "@mui/material";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -18,12 +17,14 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 function Register() {
   const navigate = useNavigate();
 
-  // Form State
+  // Form State - Includes ALL fields from the updated Serializer
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     first_name: "",
     last_name: "",
+    phone_number: "",
+    whatsapp_number: "",
     password: "",
     password2: "",
   });
@@ -54,13 +55,13 @@ function Register() {
     }
 
     try {
-      // Send data to Django Backend (matches CreateUserView)
-      // Note: Django's UserSerializer usually expects password2 for confirmation
+      // Send data to Django Backend
+      // Path matches urls.py: path('user/register/', ...)
       await api.post("api/user/register/", formData);
 
       setSuccess("Account created successfully! Redirecting to login...");
       
-      // Redirect to login after a brief delay
+      // Redirect to login after 2 seconds
       setTimeout(() => {
         navigate("/login");
       }, 2000);
@@ -68,14 +69,21 @@ function Register() {
     } catch (err) {
       console.error("Registration Error:", err.response?.data || err.message);
 
-      // Automated Error Parser (Similar to Login)
+      // Intelligent Error Parser (Extracts specific field errors from Django)
       let detailedErrorMessage = "Registration failed. Please try again.";
       if (err.response && err.response.data) {
-        detailedErrorMessage = typeof err.response.data === "object"
-          ? Object.entries(err.response.data)
-              .map(([key, value]) => `${key}: ${value}`)
-              .join(" | ")
-          : String(err.response.data);
+        if (typeof err.response.data === "object") {
+          detailedErrorMessage = Object.entries(err.response.data)
+            .map(([key, value]) => {
+              // Format field names nicely (e.g., "password2" -> "Confirm Password")
+              const fieldName = key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+              const msg = Array.isArray(value) ? value.join(", ") : value;
+              return `${fieldName}: ${msg}`;
+            })
+            .join(" | ");
+        } else {
+          detailedErrorMessage = String(err.response.data);
+        }
       } else if (err.message) {
         detailedErrorMessage = err.message;
       }
@@ -102,7 +110,7 @@ function Register() {
         sx={{
           p: { xs: 3, md: 5 },
           width: "100%",
-          maxWidth: "600px",
+          maxWidth: "650px",
           borderRadius: "16px",
           border: "1px solid #eaeaea",
           backgroundColor: "#fff",
@@ -122,10 +130,10 @@ function Register() {
           variant="h5"
           sx={{ fontWeight: "800", mb: 1, letterSpacing: "-0.5px", color: "#111" }}
         >
-          Create an Account
+          Create a Dealer Account
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Join the wholesale dealer network.
+          Join the wholesale network. Fill in your details below.
         </Typography>
 
         {/* Error Alert */}
@@ -155,6 +163,7 @@ function Register() {
                 value={formData.username}
                 onChange={handleChange}
                 disabled={loading || success}
+                helperText="Required. 150 characters or fewer."
               />
             </Grid>
 
@@ -194,6 +203,32 @@ function Register() {
                 value={formData.last_name}
                 onChange={handleChange}
                 disabled={loading || success}
+              />
+            </Grid>
+
+            {/* Phone & WhatsApp */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Phone Number"
+                name="phone_number"
+                variant="outlined"
+                fullWidth
+                value={formData.phone_number}
+                onChange={handleChange}
+                disabled={loading || success}
+                placeholder="e.g., +256700000000"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="WhatsApp Number"
+                name="whatsapp_number"
+                variant="outlined"
+                fullWidth
+                value={formData.whatsapp_number}
+                onChange={handleChange}
+                disabled={loading || success}
+                placeholder="e.g., +256700000000"
               />
             </Grid>
 
@@ -246,7 +281,7 @@ function Register() {
                   mt: 1,
                 }}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : "Sign Up Securely"}
+                {loading ? <CircularProgress size={24} color="inherit" /> : "Register Account"}
               </Button>
             </Grid>
           </Grid>
@@ -257,10 +292,8 @@ function Register() {
           <Typography variant="body2" color="text.secondary">
             Already have an account?{" "}
             <Link
-              component="button"
-              variant="body2"
-              onClick={() => navigate("/login")}
-              sx={{ fontWeight: "bold", textDecoration: "none", color: "success.main" }}
+              to="/login"
+              style={{ fontWeight: "bold", textDecoration: "none", color: "#2e7d32" }}
             >
               Sign In
             </Link>
