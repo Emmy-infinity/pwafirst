@@ -9,6 +9,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'; // ✅ Added for fallback
 import api from '../api';
 
 export default function MoMoCheckoutModal() {
@@ -21,6 +22,8 @@ export default function MoMoCheckoutModal() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [redirectUrl, setRedirectUrl] = useState(null); // ✅ State for fallback link
+  
   const [promotionFee, setPromotionFee] = useState(20000);
   const [fetchingFee, setFetchingFee] = useState(true);
 
@@ -41,7 +44,6 @@ export default function MoMoCheckoutModal() {
     fetchFee();
   }, []);
 
-  // Detect the network for UI purposes (Pesapal will still ask for network later)
   const detectCarrierNetwork = (num) => {
     const cleanNum = num.replace(/\s+/g, '');
     if (cleanNum.startsWith('25677') || cleanNum.startsWith('25678') || cleanNum.startsWith('077') || cleanNum.startsWith('078')) {
@@ -74,9 +76,9 @@ export default function MoMoCheckoutModal() {
 
     setLoading(true);
     setError(null);
+    setRedirectUrl(null); // Reset previous attempt
 
     try {
-      // Initiate payment. The backend creates the order and returns a redirect URL.
       const initPayload = {
         product: targetProductId,
         phone_number: formattedPhone,
@@ -84,11 +86,12 @@ export default function MoMoCheckoutModal() {
 
       const response = await api.post('api/payments/', initPayload);
       
-      // ✅ THE CRITICAL CHANGE: Look for the redirect_url
       if (response.data && response.data.redirect_url) {
         console.log('✅ Redirecting to Pesapal:', response.data.redirect_url);
-        // Send the user to the Pesapal hosted checkout page
-        window.location.href = response.data.redirect_url;
+        setRedirectUrl(response.data.redirect_url); // Save for fallback UI
+        
+        // ✅ Use assign() for standard document navigation
+        window.location.assign(response.data.redirect_url);
       } else {
         setError("Failed to get payment redirect link from the server.");
         setLoading(false);
@@ -108,6 +111,33 @@ export default function MoMoCheckoutModal() {
       <Box sx={{ maxWidth: '500px', width: '100%', mx: 'auto', p: 4, textAlign: 'center' }}>
         <CircularProgress />
         <Typography variant="body2" sx={{ mt: 2 }}>Loading promotion fee...</Typography>
+      </Box>
+    );
+  }
+
+  // ✅ FALLBACK UI: If we have a URL but redirect failed/was blocked
+  if (redirectUrl && !loading) {
+    return (
+      <Box sx={{ maxWidth: '500px', width: '100%', mx: 'auto', p: 4 }}>
+        <Paper elevation={3} sx={{ p: 4, textAlign: 'center', borderRadius: '16px' }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+            Secure Checkout Ready
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+            If you are not automatically redirected to Pesapal, click the button below to complete your payment securely.
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="success"
+            size="large"
+            fullWidth
+            startIcon={<OpenInNewIcon />}
+            onClick={() => window.location.assign(redirectUrl)}
+            sx={{ py: 1.5, fontWeight: 'bold' }}
+          >
+            Go to Payment Page
+          </Button>
+        </Paper>
       </Box>
     );
   }
