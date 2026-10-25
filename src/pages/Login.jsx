@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import api from "../api";
-import { useNavigate, useLocation } from "react-router-dom"; 
+import { useNavigate, useLocation, Link } from "react-router-dom"; 
 import { Box, TextField, Button, Typography, Paper, CircularProgress, Alert } from "@mui/material";
 import LoginIcon from '@mui/icons-material/Login';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -12,7 +12,7 @@ function Login() {
   const [error, setError] = useState("");
   
   const navigate = useNavigate();
-  const location = useLocation(); // 🌟 Read memory handshakes passed by other pages during roadblocks
+  const location = useLocation(); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,33 +20,35 @@ function Login() {
     setError("");
 
     try {
-      // 📡 Dispatches secure login credentials straight to your Django endpoint cluster
+      // 1. Dispatch credentials to Django
       const res = await api.post("api/token/", { username, password });
       
-      // Saves keys to memory using clean, consistent quotes to avoid lookup conflicts
+      // 2. Save tokens to Local Storage
       localStorage.setItem("ACCESS_TOKEN", res.data.access);
       if (res.data.refresh) {
         localStorage.setItem("REFRESH_TOKEN", res.data.refresh);
       }
       localStorage.setItem("USERNAME", username);
 
-      // 🧠 THE REDIRECTION ENGINE: Extracts memory vector link, otherwise defaults to home (/)
+      // 3. Redirect to the page they were trying to access, or the home feed
       const targetRedirectPath = location.state?.from || "/";
+      console.log(`🚀 Auth success! Forwarding to: ${targetRedirectPath}`);
       
-      console.log(`🚀 Authentication success! Memory vector caught. Forwarding to: ${targetRedirectPath}`);
-      
-      // Execute fast interface state forward pass
-      navigate(targetRedirectPath);
+      navigate(targetRedirectPath, { replace: true });
 
     } catch (err) {
-      console.error("💥 Core Authentication failure trace details:", err.response?.data || err.message);
+      console.error("💥 Auth failure:", err.response?.data || err.message);
       
-      // 🌟 AUTOMATED EXPLICIT PARSER ENGINE INJECTION: Exposes exactly why Django rejected the handshake
-      let detailedErrorMessage = "Invalid username or password credentials configuration.";
+      // Robust error parsing for Django responses
+      let detailedErrorMessage = "Invalid username or password.";
       if (err.response && err.response.data) {
-        detailedErrorMessage = typeof err.response.data === 'object' 
-          ? JSON.stringify(err.response.data) 
-          : String(err.response.data);
+        if (typeof err.response.data === "object") {
+          detailedErrorMessage = Object.entries(err.response.data)
+            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : value}`)
+            .join(" | ");
+        } else {
+          detailedErrorMessage = String(err.response.data);
+        }
       } else if (err.message) {
         detailedErrorMessage = err.message;
       }
@@ -56,8 +58,9 @@ function Login() {
       setLoading(false);
     }
   };
+
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '90vh', p: 2 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '90vh', p: 2, backgroundColor: "#fbfbfb" }}>
       <Paper elevation={4} sx={{ p: 4, width: '100%', maxWidth: '400px', borderRadius: '16px', border: '1px solid #eaeaea', backgroundColor: '#fff' }}>
         
         <Button 
@@ -114,6 +117,17 @@ function Login() {
             </Button>
           </Box>
         </form>
+
+        {/* Added a link to Register for better UX */}
+        <Box sx={{ mt: 3, textAlign: "center" }}>
+          <Typography variant="body2" color="text.secondary">
+            Don't have an account?{" "}
+            <Link to="/register" style={{ fontWeight: "bold", textDecoration: "none", color: "#2e7d32" }}>
+              Create one here
+            </Link>
+          </Typography>
+        </Box>
+
       </Paper>
     </Box>
   );
