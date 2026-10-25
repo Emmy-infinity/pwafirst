@@ -21,8 +21,7 @@ export default function MoMoCheckoutModal() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-  const [promotionFee, setPromotionFee] = useState(20000); // default fallback
+  const [promotionFee, setPromotionFee] = useState(20000);
   const [fetchingFee, setFetchingFee] = useState(true);
 
   // Fetch the current promotion fee from the backend
@@ -34,7 +33,7 @@ export default function MoMoCheckoutModal() {
         setPromotionFee(parseFloat(fee));
       } catch (err) {
         console.error('Failed to fetch promotion fee:', err);
-        setPromotionFee(20000); // fallback
+        setPromotionFee(20000);
       } finally {
         setFetchingFee(false);
       }
@@ -42,6 +41,7 @@ export default function MoMoCheckoutModal() {
     fetchFee();
   }, []);
 
+  // Detect the network for UI purposes (Pesapal will still ask for network later)
   const detectCarrierNetwork = (num) => {
     const cleanNum = num.replace(/\s+/g, '');
     if (cleanNum.startsWith('25677') || cleanNum.startsWith('25678') || cleanNum.startsWith('077') || cleanNum.startsWith('078')) {
@@ -72,49 +72,37 @@ export default function MoMoCheckoutModal() {
       return;
     }
 
-    if (!carrier.network) {
-      setError("Could not detect network. Please ensure the number is MTN or Airtel.");
-      return;
-    }
-
     setLoading(true);
     setError(null);
-    setSuccess(false);
 
     try {
-      // Initiate payment (the backend ignores the amount, uses its own)
+      // Initiate payment. The backend creates the order and returns a redirect URL.
       const initPayload = {
         product: targetProductId,
         phone_number: formattedPhone,
-        network: carrier.network,
-        // amount is not sent; backend uses admin fee
       };
 
-      const initResponse = await api.post('api/payments/', initPayload);
-      const { tx_ref } = initResponse.data;
-      console.log('💰 Payment initiated, tx_ref:', tx_ref);
-
-      // Optionally simulate webhook confirmation for testing (only in DEBUG)
-      try {
-        await api.post('api/test-payment/', { tx_ref });
-        console.log('✅ Transaction confirmed manually');
-      } catch (confirmErr) {
-        console.warn('Manual confirmation failed (probably DEBUG=False):', confirmErr.message);
+      const response = await api.post('api/payments/', initPayload);
+      
+      // ✅ THE CRITICAL CHANGE: Look for the redirect_url
+      if (response.data && response.data.redirect_url) {
+        console.log('✅ Redirecting to Pesapal:', response.data.redirect_url);
+        // Send the user to the Pesapal hosted checkout page
+        window.location.href = response.data.redirect_url;
+      } else {
+        setError("Failed to get payment redirect link from the server.");
+        setLoading(false);
       }
 
-      setSuccess(true);
-      setLoading(false);
-      setTimeout(() => navigate('/'), 4000);
     } catch (err) {
       console.error('💥 Payment error:', err.response?.data || err.message);
       const errorMsg = err.response?.data?.error || err.response?.data?.message || 
-                       "Failed to trigger Mobile Money prompt. Verify connection rules.";
+                       "Failed to initiate payment. Please check your connection and try again.";
       setError(errorMsg);
       setLoading(false);
     }
   };
 
-  // Display loading while fetching fee
   if (fetchingFee) {
     return (
       <Box sx={{ maxWidth: '500px', width: '100%', mx: 'auto', p: 4, textAlign: 'center' }}>
@@ -165,11 +153,6 @@ export default function MoMoCheckoutModal() {
         </Card>
 
         {error && <Alert severity="error" sx={{ mb: 3, borderRadius: '8px' }}>{error}</Alert>}
-        {success && (
-          <Alert severity="success" sx={{ mb: 3, borderRadius: '8px' }}>
-            🎉 <strong>Payment successful!</strong> Your listing has been boosted. Redirecting...
-          </Alert>
-        )}
 
         <form onSubmit={handlePaymentSubmission}>
           <Grid container spacing={2.5}>
@@ -187,7 +170,7 @@ export default function MoMoCheckoutModal() {
                 InputProps={{
                   startAdornment: <InputAdornment position="start"><PhoneAndroidIcon color="action" /></InputAdornment>
                 }}
-                helperText="MTN Mobile Money or Airtel Money phone lines accepted."
+                helperText="We will redirect you to Pesapal to complete the payment via MTN, Airtel, or Card."
               />
             </Grid>
 
@@ -226,7 +209,7 @@ export default function MoMoCheckoutModal() {
                 }}
                 disabled={loading || phoneNumber.trim().length < 9}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : `Authorize UGX ${promotionFee.toLocaleString()} Boost`}
+                {loading ? <CircularProgress size={24} color="inherit" /> : `Proceed to Pay UGX ${promotionFee.toLocaleString()}`}
               </Button>
             </Grid>
           </Grid>
