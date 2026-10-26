@@ -34,6 +34,7 @@ const FooterLink = styled(Link)({
   }
 });
 
+// ✅ SOTA Payment Tile Component
 const PaymentTile = ({ name, src, alt }) => (
   <Tooltip title={`Pay securely with ${name}`} arrow placement="top">
     <Box 
@@ -46,7 +47,7 @@ const PaymentTile = ({ name, src, alt }) => (
         py: 1, 
         borderRadius: '8px',
         height: '44px', 
-        minWidth: '70px', // Ensures consistent width
+        minWidth: '80px',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
         transition: 'transform 0.2s ease, boxShadow 0.2s ease',
         cursor: 'pointer',
@@ -59,7 +60,13 @@ const PaymentTile = ({ name, src, alt }) => (
       <img 
         src={src} 
         alt={alt} 
-        style={{ height: '22px', width: 'auto', objectFit: 'contain' }} 
+        style={{ 
+          height: '24px', 
+          width: 'auto', 
+          objectFit: 'contain',
+          // ✅ FORCE the SVG to render dark so it shows on the white tile
+          filter: 'brightness(0) saturate(100%) invert(15%) sepia(10%) saturate(500%) hue-rotate(180deg)'
+        }} 
       />
     </Box>
   </Tooltip>
@@ -168,26 +175,26 @@ const Footer = () => {
             </Box>
           </Box>
 
-          {/* ✅ CORRECTED LOGO URLS */}
+          {/* ✅ CORRECTED LOGO URLS WITH COLOR FIX */}
           <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap', justifyContent: 'center' }}>
             <PaymentTile 
               name="Visa" 
-              src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" 
+              src="https://cdn.simpleicons.org/visa/1a1f71" 
               alt="Visa" 
             />
             <PaymentTile 
               name="Mastercard" 
-              src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" 
+              src="https://cdn.simpleicons.org/mastercard/eb001b" 
               alt="Mastercard" 
             />
             <PaymentTile 
               name="MTN Mobile Money" 
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/MTN_Logo.svg/512px-MTN_Logo.svg.png" 
+              src="https://cdn.simpleicons.org/mtn/ffcc00" 
               alt="MTN Mobile Money" 
             />
             <PaymentTile 
               name="Airtel Money" 
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Airtel_logo.svg/512px-Airtel_logo.svg.png" 
+              src="https://cdn.simpleicons.org/airtel/ff0000" 
               alt="Airtel Money" 
             />
           </Box>
