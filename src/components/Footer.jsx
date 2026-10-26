@@ -10,7 +10,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import LockIcon from '@mui/icons-material/Lock';
 
 const FooterWrapper = styled(Box)(({ theme }) => ({
-  backgroundColor: '#111315', // Deeper, richer dark background
+  backgroundColor: '#111315',
   color: '#eaeaea',
   paddingTop: '64px',
   paddingBottom: '32px',
@@ -30,11 +30,10 @@ const FooterLink = styled(Link)({
   cursor: 'pointer',
   '&:hover': {
     color: '#ffffff',
-    transform: 'translateX(4px)', // Subtle hover animation
+    transform: 'translateX(4px)',
   }
 });
 
-// ✅ SOTA Payment Tile Component
 const PaymentTile = ({ name, src, alt }) => (
   <Tooltip title={`Pay securely with ${name}`} arrow placement="top">
     <Box 
@@ -46,7 +45,8 @@ const PaymentTile = ({ name, src, alt }) => (
         px: 2, 
         py: 1, 
         borderRadius: '8px',
-        height: '44px', // Larger, more tappable
+        height: '44px', 
+        minWidth: '70px', // Ensures consistent width
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
         transition: 'transform 0.2s ease, boxShadow 0.2s ease',
         cursor: 'pointer',
@@ -59,7 +59,7 @@ const PaymentTile = ({ name, src, alt }) => (
       <img 
         src={src} 
         alt={alt} 
-        style={{ height: '24px', width: 'auto', objectFit: 'contain' }} 
+        style={{ height: '22px', width: 'auto', objectFit: 'contain' }} 
       />
     </Box>
   </Tooltip>
@@ -143,9 +143,9 @@ const Footer = () => {
           </Grid>
         </Grid>
 
-        {/* ✅ SOTA TRUST BAR: Highlighting Payment Methods */}
+        {/* ✅ SOTA TRUST BAR */}
         <Box sx={{ 
-          bgcolor: 'rgba(255, 255, 255, 0.03)', // Very subtle background to separate it
+          bgcolor: 'rgba(255, 255, 255, 0.03)',
           border: '1px solid rgba(255, 255, 255, 0.05)',
           borderRadius: '16px',
           p: 3,
@@ -156,7 +156,6 @@ const Footer = () => {
           justifyContent: 'space-between',
           gap: 3
         }}>
-          {/* Trust Text */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <LockIcon sx={{ color: '#4caf50', fontSize: 28 }} />
             <Box>
@@ -169,26 +168,26 @@ const Footer = () => {
             </Box>
           </Box>
 
-          {/* Highly Visible Payment Logos */}
+          {/* ✅ CORRECTED LOGO URLS */}
           <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap', justifyContent: 'center' }}>
             <PaymentTile 
               name="Visa" 
-              src="https://cdn.simpleicons.org/visa/1a1f71" 
+              src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" 
               alt="Visa" 
             />
             <PaymentTile 
               name="Mastercard" 
-              src="https://cdn.simpleicons.org/mastercard/eb001b" 
+              src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" 
               alt="Mastercard" 
             />
             <PaymentTile 
               name="MTN Mobile Money" 
-              src="https://cdn.simpleicons.org/mtn/ffcc00" 
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/MTN_Logo.svg/512px-MTN_Logo.svg.png" 
               alt="MTN Mobile Money" 
             />
             <PaymentTile 
               name="Airtel Money" 
-              src="https://cdn.simpleicons.org/airtel/ff0000" 
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Airtel_logo.svg/512px-Airtel_logo.svg.png" 
               alt="Airtel Money" 
             />
           </Box>
@@ -196,7 +195,6 @@ const Footer = () => {
 
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)', my: 3 }} />
 
-        {/* Bottom Bar: Copyright */}
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <Typography variant="caption" sx={{ color: '#6b7280', textAlign: 'center', fontWeight: '500' }}>
             © {new Date().getFullYear()} Northern Market. All Rights Reserved.
