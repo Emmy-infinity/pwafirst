@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { 
   Box, Typography, Container, Grid, Link, 
-  Divider, Chip, Dialog, DialogTitle, 
+  Divider, Dialog, DialogTitle, 
   DialogContent, DialogActions, Button, styled 
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import ShieldIcon from '@mui/icons-material/Shield';
+import LockIcon from '@mui/icons-material/Lock';
 
 const FooterWrapper = styled(Box)(({ theme }) => ({
   backgroundColor: '#1a1d20',
@@ -31,6 +32,27 @@ const FooterLink = styled(Link)({
     textDecoration: 'underline'
   }
 });
+
+// ✅ Brand Logo Component using Simple Icons CDN
+const PaymentLogo = ({ name, src, alt }) => (
+  <Box 
+    sx={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: 0.5, 
+      bgcolor: '#ffffff', 
+      px: 1.5, 
+      py: 0.5, 
+      borderRadius: '4px',
+      height: '32px'
+    }}
+  >
+    <img src={src} alt={alt} style={{ height: '20px', width: 'auto' }} />
+    <Typography variant="caption" sx={{ color: '#333', fontWeight: 'bold', fontSize: '11px' }}>
+      {name}
+    </Typography>
+  </Box>
+);
 
 const Footer = () => {
   const [legalModal, setLegalModal] = useState({ open: false, title: '', content: '' });
@@ -118,18 +140,34 @@ const Footer = () => {
             © {new Date().getFullYear()} Northern Market. All Rights Reserved.
           </Typography>
           
-          {/* Payment Method Chips */}
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Chip 
-              size="small" 
-              icon={<ShieldIcon style={{ color: '#4caf50' }} />} 
-              label="Secure Checkout" 
-              sx={{ bgcolor: 'rgba(76,175,80,0.1)', color: '#4caf50', fontWeight: 'bold', border: '1px solid rgba(76,175,80,0.2)' }} 
+          {/* Payment Method Logos */}
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#4caf50', mr: 1 }}>
+              <LockIcon fontSize="small" />
+              <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Secure</Typography>
+            </Box>
+
+            <PaymentLogo 
+              name="Visa" 
+              src="https://cdn.simpleicons.org/visa/1a1f71" 
+              alt="Visa" 
             />
-            <Chip size="small" label="Visa" sx={{ bgcolor: '#1a1f71', color: '#fff', fontWeight: 'bold' }} />
-            <Chip size="small" label="Mastercard" sx={{ bgcolor: '#eb001b', color: '#fff', fontWeight: 'bold' }} />
-            <Chip size="small" label="MTN MoMo" sx={{ bgcolor: '#ffcc00', color: '#000', fontWeight: 'bold' }} />
-            <Chip size="small" label="Airtel Money" sx={{ bgcolor: '#ff0000', color: '#fff', fontWeight: 'bold' }} />
+            <PaymentLogo 
+              name="Mastercard" 
+              src="https://cdn.simpleicons.org/mastercard/eb001b" 
+              alt="Mastercard" 
+            />
+            <PaymentLogo 
+              name="MTN MoMo" 
+              src="https://cdn.simpleicons.org/mtn/ffcc00" 
+              alt="MTN Mobile Money" 
+            />
+            <PaymentLogo 
+              name="Airtel" 
+              src="https://cdn.simpleicons.org/airtel/ff0000" 
+              alt="Airtel Money" 
+            />
           </Box>
         </Box>
       </Container>
